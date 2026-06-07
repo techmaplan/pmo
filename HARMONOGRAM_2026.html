@@ -2509,6 +2509,16 @@ document.addEventListener('mousemove', function(e) {
 
 // Run after page load
 document.addEventListener('DOMContentLoaded', renderCalAlerts);
+document.addEventListener('DOMContentLoaded', function(){
+  // Wczytaj nazwę i numer projektu z parametrów URL (nowy projekt z panelu)
+  const params = new URLSearchParams(window.location.search);
+  const urlName = params.get('name');
+  const urlNum  = params.get('num');
+  const t = document.getElementById('project-title');
+  const n = document.getElementById('project-number');
+  if (urlName && t && !t.value) { t.value = urlName; document.title = urlName; }
+  if (urlNum  && n && !n.value) { n.value = urlNum; }
+});
 // Also run now (in case DOM already ready)
 if (document.readyState !== 'loading') setTimeout(renderCalAlerts, 200);
 

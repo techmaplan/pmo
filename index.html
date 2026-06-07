@@ -492,10 +492,19 @@ async function openSchedule(id) {
   if (!p) return;
   const syncId = p.syncId || p.num || p.name.replace(/\s+/g,'_');
   showToast('Ładowanie…');
+
+  // Zapisany harmonogram w Supabase
   const stored = await loadSchedule(syncId);
   if (stored) { openInTab(stored); showToast('✓ Otwarto'); return; }
+
+  // Fallback URL (projekt MCD i inne z scheduleUrl)
   if (p.scheduleUrl) { window.open(p.scheduleUrl, '_blank'); showToast('✓ Otwarto'); return; }
-  await openNewFromTemplate(p.name, p.num || syncId);
+
+  // Nowy projekt — otwórz szablon bezpośrednio z serwera z parametrami w URL
+  const loc = window.location.href.split('?')[0];
+  const base = loc.endsWith('/') ? loc : loc.substring(0, loc.lastIndexOf('/') + 1);
+  const params = new URLSearchParams({ name: p.name, num: p.num || syncId });
+  window.open(base + 'HARMONOGRAM_2026.html?' + params.toString(), '_blank');
   showToast('✓ Otwarto nowy harmonogram');
 }
 
