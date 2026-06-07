@@ -742,7 +742,6 @@ thead th.dc{position:relative}
   <span class="col-sep"></span>
   <button class="notes-btn" onclick="openUstalenia()" title="Dziennik projektu">📋 Ustalenia<span class="notif-badge" id="ust-badge" style="display: none;">1</span></button>
   <span class="col-sep"></span>
-  <button class="save-btn" onclick="saveHTML()" title="Zapisz zmiany w panelu projektów (bez pobierania pliku)">💾 Zapisz zmiany</button>
   <label class="load-btn" title="Wczytaj projekt z pliku JSON">📂 Wczytaj projekt<input type="file" accept=".json" style="display:none" onchange="loadProject(event)"></label>
   <span class="col-sep"></span>
   <button class="mech-btn" onclick="addMechanizm()">＋ MECHANIZM</button>
@@ -2510,6 +2509,13 @@ document.addEventListener('mousemove', function(e) {
 // Run after page load
 document.addEventListener('DOMContentLoaded', renderCalAlerts);
 document.addEventListener('DOMContentLoaded', function(){
+  // Włącz autozapis po załadowaniu strony
+  setTimeout(() => { window._autosaveReady = true; }, 2000);
+  // Uruchom presence
+  const __syncId = (document.getElementById('project-number')?.value || document.getElementById('project-title')?.value || 'default').replace(/\s+/g,'_');
+  __startPresence(__syncId);
+});
+document.addEventListener('DOMContentLoaded', function(){
   // Wczytaj nazwę i numer projektu z parametrów URL (nowy projekt z panelu)
   const params = new URLSearchParams(window.location.search);
   const urlName = params.get('name');
@@ -3273,6 +3279,7 @@ function _getSegments(s,e){
 }
 
 function render(){
+  if(typeof _autosaveReady!=="undefined"&&_autosaveReady) scheduleAutosave();
   initializeManpowerFlags();
   // schedule alert icons re-render after DOM update
   setTimeout(()=>{ if(typeof renderCalAlerts==="function") renderCalAlerts(); }, 50);
@@ -5687,7 +5694,13 @@ function tmplSaveAsNew(){
 
 const __SB_URL = 'https://qggsljbngjtlkzahapch.supabase.co';
 const __SB_KEY = 'sb_publishable_WDcdhn0NY9IRrNFSlmldkA_kSI62e5p';
-function __sbToken(){ return sessionStorage.getItem('sb_token') || __SB_KEY; }
+function __sbToken(){
+  // Najpierw z URL (token przekazany z panelu)
+  const urlToken = new URLSearchParams(window.location.search).get('token');
+  if (urlToken) return urlToken;
+  // Fallback: sessionStorage
+  return sessionStorage.getItem('sb_token') || __SB_KEY;
+}
 async function __sbUpsert(table, row) {
   await fetch(`${__SB_URL}/rest/v1/${table}`, {
     method: 'POST',
@@ -5727,6 +5740,104 @@ let _psExpanded=${_psExpanded};
   const stalePattern=/document\.addEventListener\('DOMContentLoaded',function\(\)\{\s*var t=document\.getElementById\('project-title'\)[\s\S]*?\}\);\n?/g;
   const tail=src.slice(ei).replace(stalePattern,'');
   return src.slice(0,si)+newBlock+tail;
+}
+
+
+// ── Autozapis ────────────────────────────────────────────────────────────────
+let _autosaveTimer = null;
+let _autosaveIndicator = null;
+
+function _showAutosaveStatus(msg, color) {
+  if (!_autosaveIndicator) {
+    _autosaveIndicator = document.createElement('div');
+    _autosaveIndicator.style.cssText = 'position:fixed;bottom:12px;right:16px;font-family:Barlow,sans-serif;font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;padding:4px 10px;border-radius:3px;z-index:999;opacity:0;transition:opacity .3s;pointer-events:none';
+    document.body.appendChild(_autosaveIndicator);
+  }
+  _autosaveIndicator.textContent = msg;
+  _autosaveIndicator.style.background = color === 'ok' ? '#27ae60' : color === 'err' ? '#c0392b' : '#888';
+  _autosaveIndicator.style.color = '#fff';
+  _autosaveIndicator.style.opacity = '1';
+  clearTimeout(_autosaveIndicator._hide);
+  if (color === 'ok') {
+    _autosaveIndicator._hide = setTimeout(() => { _autosaveIndicator.style.opacity = '0'; }, 2000);
+  }
+}
+
+function scheduleAutosave() {
+  clearTimeout(_autosaveTimer);
+  _showAutosaveStatus('Niezapisane zmiany…', 'pending');
+  _autosaveTimer = setTimeout(async () => {
+    _showAutosaveStatus('Zapisywanie…', 'pending');
+    try {
+      await saveHTML();
+      _showAutosaveStatus('✓ Zapisano', 'ok');
+    } catch(e) {
+      _showAutosaveStatus('Błąd zapisu', 'err');
+    }
+  }, 3000);
+}
+
+
+// ── Presence ─────────────────────────────────────────────────────────────────
+const __PRESENCE_COLORS = ['#e74c3c','#3498db','#2ecc71','#f39c12','#9b59b6','#1abc9c','#e67e22','#e91e63'];
+function __presenceColor(email) {
+  let h = 0; for (let i = 0; i < email.length; i++) h = (h * 31 + email.charCodeAt(i)) & 0xffffffff;
+  return __PRESENCE_COLORS[Math.abs(h) % __PRESENCE_COLORS.length];
+}
+function __presenceInitials(email) {
+  const name = email.split('@')[0];
+  const parts = name.split(/[._-]/);
+  if (parts.length >= 2) return (parts[0][0] + parts[1][0]).toUpperCase();
+  return name.slice(0, 2).toUpperCase();
+}
+
+let __presenceUsers = {};
+
+function __startPresence(syncId) {
+  const token = __sbToken();
+  if (!token || token === __SB_KEY) return; // niezalogowany
+  // Odczytaj email z tokenu JWT
+  let email = '';
+  try { email = JSON.parse(atob(token.split('.')[1])).email || ''; } catch(e) { return; }
+  if (!email) return;
+
+  const channel = `presence:harmonogram:${syncId}`;
+  const ws = new WebSocket(`${__SB_URL.replace('https','wss')}/realtime/v1/websocket?apikey=${__SB_KEY}&vsn=1.0.0`);
+
+  ws.onopen = () => {
+    ws.send(JSON.stringify({ topic: `realtime:${channel}`, event: 'phx_join', payload: { config: { presence: { key: email } } }, ref: 'p1' }));
+    ws.send(JSON.stringify({ topic: `realtime:${channel}`, event: 'presence', payload: { type: 'track', payload: { email, online_at: new Date().toISOString() } }, ref: 'p2' }));
+    __renderPresenceBar(email);
+  };
+
+  ws.onmessage = e => {
+    try {
+      const msg = JSON.parse(e.data);
+      if (msg.event === 'presence_state' || msg.event === 'presence_diff') {
+        if (msg.payload?.joins) Object.entries(msg.payload.joins).forEach(([k,v]) => { if(v.metas?.[0]) __presenceUsers[k] = v.metas[0]; });
+        if (msg.payload?.leaves) Object.keys(msg.payload.leaves).forEach(k => delete __presenceUsers[k]);
+        __renderPresenceBar(email);
+      }
+    } catch(e) {}
+  };
+
+  ws.onclose = () => setTimeout(() => __startPresence(syncId), 5000);
+  setInterval(() => { if(ws.readyState===1) ws.send(JSON.stringify({topic:'phoenix',event:'heartbeat',payload:{},ref:'hb'})); }, 30000);
+}
+
+function __renderPresenceBar(myEmail) {
+  let bar = document.getElementById('__presence_bar__');
+  if (!bar) {
+    bar = document.createElement('div');
+    bar.id = '__presence_bar__';
+    bar.style.cssText = 'display:flex;align-items:center;gap:4px;margin-left:8px';
+    const toggle = document.getElementById('toolbar-toggle-bar');
+    if (toggle) toggle.appendChild(bar);
+  }
+  const others = Object.keys(__presenceUsers).filter(e => e !== myEmail);
+  if (!others.length) { bar.innerHTML = ''; return; }
+  bar.innerHTML = '<span style="font-size:9px;font-weight:700;color:#888;letter-spacing:.06em;text-transform:uppercase;margin-right:2px">Online:</span>'
+    + others.map(email => `<div title="${email}" style="width:24px;height:24px;border-radius:50%;background:${__presenceColor(email)};display:flex;align-items:center;justify-content:center;font-family:Barlow,sans-serif;font-size:9px;font-weight:700;color:#fff;cursor:default;border:2px solid #fff;box-shadow:0 1px 3px rgba(0,0,0,.2)">${__presenceInitials(email)}</div>`).join('');
 }
 
 function toggleToolbar(){

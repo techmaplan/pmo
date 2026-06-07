@@ -119,6 +119,7 @@ body{font-family:'Barlow',sans-serif;background:var(--g1);color:var(--black);min
   <div class="header-right">
     <div id="user-info" style="display:none;align-items:center;gap:10px">
       <span id="user-email" style="font-size:11px;color:var(--g4);letter-spacing:.06em"></span>
+      <div id="presence-bar" style="display:flex;align-items:center;gap:4px"></div>
       <button onclick="openChangePassword()" style="font-family:'Barlow',sans-serif;font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;padding:3px 12px;cursor:pointer;border:1px solid rgba(255,255,255,.2);background:transparent;color:var(--g4);border-radius:3px;height:24px">Zmień hasło</button>
       <button onclick="sbSignOut()" style="font-family:'Barlow',sans-serif;font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;padding:3px 12px;cursor:pointer;border:1px solid rgba(255,255,255,.2);background:transparent;color:var(--g4);border-radius:3px;height:24px">Wyloguj</button>
     </div>
@@ -229,7 +230,7 @@ body{font-family:'Barlow',sans-serif;background:var(--g1);color:var(--black);min
     </div>
     <div class="field">
       <label>Nazwa projektu</label>
-      <input type="text" id="f-name" placeholder="np. Remont biura">
+      <input type="text" id="f-name" placeholder="Nazwa projektu">
     </div>
     <div class="field">
       <label>Opis</label>
@@ -504,7 +505,7 @@ function renderProjects() {
     return;
   }
   container.innerHTML = list.map(p => `
-    <div class="project-card ${p.status}">
+    <div class="project-card ${p.status}" onclick="openSchedule('${p.id}')" style="cursor:pointer">
       <div class="card-accent"></div>
       <div class="card-body">
         <div class="card-top">
@@ -523,8 +524,7 @@ function renderProjects() {
           <div class="progress-track"><div class="progress-fill" style="width:${p.progress||0}%"></div></div>
         </div>
       </div>
-      <div class="card-actions">
-        <button class="action-btn primary" onclick="openSchedule('${p.id}')">📅 Harmonogram</button>
+      <div class="card-actions" onclick="event.stopPropagation()">
         <button class="action-btn" onclick="editProject('${p.id}')">✎ Edytuj</button>
       </div>
     </div>`).join('');
@@ -535,6 +535,9 @@ async function openSchedule(id) {
   const p = projects.find(x => x.id === id);
   if (!p) return;
   const syncId = p.syncId || p.num || p.name.replace(/\s+/g,'_');
+  const loc  = window.location.href.split('?')[0];
+  const base = loc.endsWith('/') ? loc : loc.substring(0, loc.lastIndexOf('/') + 1);
+  const token = _authToken || '';
   showToast('Ładowanie…');
 
   // Zapisany harmonogram w Supabase
@@ -542,12 +545,14 @@ async function openSchedule(id) {
   if (stored) { openInTab(stored); showToast('✓ Otwarto'); return; }
 
   // Fallback URL (projekt MCD i inne z scheduleUrl)
-  if (p.scheduleUrl) { window.open(p.scheduleUrl, '_blank'); showToast('✓ Otwarto'); return; }
+  if (p.scheduleUrl) {
+    const params = new URLSearchParams({ token });
+    window.open(base + p.scheduleUrl + '?' + params.toString(), '_blank');
+    showToast('✓ Otwarto'); return;
+  }
 
-  // Nowy projekt — otwórz szablon bezpośrednio z serwera z parametrami w URL
-  const loc = window.location.href.split('?')[0];
-  const base = loc.endsWith('/') ? loc : loc.substring(0, loc.lastIndexOf('/') + 1);
-  const params = new URLSearchParams({ name: p.name, num: p.num || syncId });
+  // Nowy projekt — otwórz szablon z parametrami
+  const params = new URLSearchParams({ name: p.name, num: p.num || syncId, token });
   window.open(base + 'HARMONOGRAM_2026.html?' + params.toString(), '_blank');
   showToast('✓ Otwarto nowy harmonogram');
 }
@@ -569,9 +574,10 @@ function setView(v) {
 
 // ── Zasoby / Szablon ─────────────────────────────────────────────────────────
 function openZasoby() {
-  const loc = window.location.href;
+  const loc  = window.location.href.split('?')[0];
   const base = loc.endsWith('/') ? loc : loc.substring(0, loc.lastIndexOf('/') + 1);
-  window.open(base + 'ZASOBY_2026.html', '_blank');
+  const params = new URLSearchParams({ token: _authToken || '' });
+  window.open(base + 'ZASOBY_2026.html?' + params.toString(), '_blank');
 }
 
 async function openSzablon() {
@@ -736,7 +742,92 @@ function showToast(msg) {
   t._hide = setTimeout(() => { t.style.opacity = '0'; }, 3500);
 }
 
-// ── Reset hasła ──────────────────────────────────────────────────────────────
+// ── Presence ─────────────────────────────────────────────────────────────────
+const PRESENCE_COLORS = ['#e74c3c','#3498db','#2ecc71','#f39c12','#9b59b6','#1abc9c','#e67e22','#e91e63'];
+function presenceColor(email) {
+  let h = 0; for (let i = 0; i < email.length; i++) h = (h * 31 + email.charCodeAt(i)) & 0xffffffff;
+  return PRESENCE_COLORS[Math.abs(h) % PRESENCE_COLORS.length];
+}
+function presenceInitials(email) {
+  const name = email.split('@')[0];
+  const parts = name.split(/[._-]/);
+  if (parts.length >= 2) return (parts[0][0] + parts[1][0]).toUpperCase();
+  return name.slice(0, 2).toUpperCase();
+}
+
+let _presenceChannel = null;
+let _presenceUsers = {};
+
+function startPresence(location) {
+  if (!_authUser) return;
+  const email = _authUser.email;
+  const channel = `presence:${location}`;
+
+  _presenceChannel = new WebSocket(
+    `${SB_URL.replace('https','wss')}/realtime/v1/websocket?apikey=${SB_KEY}&vsn=1.0.0`
+  );
+
+  _presenceChannel.onopen = () => {
+    // Join presence channel
+    _presenceChannel.send(JSON.stringify({
+      topic: `realtime:${channel}`, event: 'phx_join',
+      payload: { config: { presence: { key: email } } }, ref: 'p1'
+    }));
+    // Broadcast own presence
+    _presenceChannel.send(JSON.stringify({
+      topic: `realtime:${channel}`, event: 'presence',
+      payload: { type: 'track', payload: { email, location, online_at: new Date().toISOString() } },
+      ref: 'p2'
+    }));
+  };
+
+  _presenceChannel.onmessage = e => {
+    try {
+      const msg = JSON.parse(e.data);
+      if (msg.event === 'presence_state' || msg.event === 'presence_diff') {
+        // Rebuild users list from joins/leaves
+        if (msg.payload?.joins) {
+          Object.entries(msg.payload.joins).forEach(([key, val]) => {
+            const metas = val.metas || [];
+            if (metas.length) _presenceUsers[key] = metas[0];
+          });
+        }
+        if (msg.payload?.leaves) {
+          Object.keys(msg.payload.leaves).forEach(key => delete _presenceUsers[key]);
+        }
+        renderPresence();
+      }
+    } catch(e) {}
+  };
+
+  _presenceChannel.onclose = () => setTimeout(() => startPresence(location), 5000);
+
+  // Heartbeat
+  setInterval(() => {
+    if (_presenceChannel?.readyState === 1) {
+      _presenceChannel.send(JSON.stringify({ topic: 'phoenix', event: 'heartbeat', payload: {}, ref: 'hb' }));
+    }
+  }, 30000);
+}
+
+function renderPresence() {
+  const bar = document.getElementById('presence-bar');
+  if (!bar) return;
+  const myEmail = _authUser?.email;
+  const others = Object.entries(_presenceUsers)
+    .filter(([email]) => email !== myEmail);
+
+  if (!others.length) { bar.innerHTML = ''; return; }
+
+  bar.innerHTML = others.map(([email]) => `
+    <div title="${email}" style="width:26px;height:26px;border-radius:50%;background:${presenceColor(email)};
+      display:flex;align-items:center;justify-content:center;font-family:'Barlow',sans-serif;
+      font-size:10px;font-weight:700;color:#fff;letter-spacing:.02em;cursor:default;
+      border:2px solid rgba(255,255,255,.3)">${presenceInitials(email)}</div>
+  `).join('');
+}
+
+// ── Reset hasła ───────────────────────────────────────────────────────────────
 function openForgotPassword() {
   document.getElementById('forgot-email').value = document.getElementById('login-email').value || '';
   document.getElementById('forgot-msg').style.display = 'none';
@@ -834,6 +925,7 @@ async function doLogin() {
     hideLoginScreen();
     await loadProjects();
     renderProjects();
+    startPresence('panel');
     sbRealtime('projekty', async () => { await loadProjects(); renderProjects(); });
     sbRealtime('harmonogramy', async (event, record) => {
       if (!record) return;
@@ -858,6 +950,7 @@ async function doLogin() {
       await loadProjects();
       hideLoginScreen();
       renderProjects();
+      startPresence('panel');
       // Uruchom realtime
       sbRealtime('projekty', async () => { await loadProjects(); renderProjects(); });
       sbRealtime('harmonogramy', async (event, record) => {
