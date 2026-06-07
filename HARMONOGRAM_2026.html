@@ -5667,6 +5667,19 @@ function tmplSaveAsNew(){
 
 // ── End template editor ──────────────────────────────────────────
 
+const __SB_URL = 'https://qggsljbngjtlkzahapch.supabase.co';
+const __SB_KEY = 'sb_publishable_WDcdhn0NY9IRrNFSlmldkA_kSI62e5p';
+async function __sbUpsert(table, row) {
+  await fetch(`${__SB_URL}/rest/v1/${table}`, {
+    method: 'POST',
+    headers: {
+      'apikey': __SB_KEY, 'Authorization': `Bearer ${__SB_KEY}`,
+      'Content-Type': 'application/json', 'Prefer': 'resolution=merge-duplicates'
+    },
+    body: JSON.stringify(row),
+  });
+}
+
 function _buildNewSrc(){
   const _rawSrc=document.documentElement.outerHTML;
   const src=_rawSrc
@@ -5697,7 +5710,7 @@ let _psExpanded=${_psExpanded};
   return src.slice(0,si)+newBlock+tail;
 }
 
-function saveHTML(){
+async function saveHTML(){
   const pm_title=document.getElementById('project-title').value||'Nowy projekt';
   const pm_num=document.getElementById('project-number').value||'';
   const syncId=pm_num||pm_title.replace(/\s+/g,'_');
@@ -5721,29 +5734,39 @@ function saveHTML(){
     end:   maxDate?maxDate.toISOString().slice(0,10):null,
   };
 
-  // Zapisz HTML harmonogramu do localStorage (osobny klucz per projekt)
+  // Zapisz HTML harmonogramu do Supabase
   try{
-    localStorage.setItem('pm_sched_src_'+syncId, newSrc);
+    await __sbUpsert('harmonogramy', { sync_id: syncId, html: newSrc });
   }catch(e){
-    // Jeśli za duże — wyczyść stare i spróbuj ponownie
-    for(const k of Object.keys(localStorage)){
-      if(k.startsWith('pm_sched_src_')&&k!=='pm_sched_src_'+syncId){localStorage.removeItem(k);break;}
-    }
-    try{localStorage.setItem('pm_sched_src_'+syncId,newSrc);}catch(e2){
-      alert('Brak miejsca w localStorage. Otwórz panel i usuń nieużywane projekty.');return;
-    }
+    alert('Błąd zapisu: ' + e.message); return;
   }
 
-  // Aktualizuj kolejkę metadanych
+  // Aktualizuj metadane projektu w Supabase
   try{
-    const store=JSON.parse(localStorage.getItem('pm_sync_queue')||'[]');
-    const idx=store.findIndex(p=>p.id===syncId);
-    if(idx>=0)store[idx]=payload;else store.push(payload);
-    localStorage.setItem('pm_sync_queue',JSON.stringify(store));
+    const allRes = await fetch(`${__SB_URL}/rest/v1/projekty?select=*`, {
+      headers: { 'apikey': __SB_KEY, 'Authorization': `Bearer ${__SB_KEY}` }
+    });
+    if(allRes.ok){
+      const rows = await allRes.json();
+      const row = rows.find(r => r.data && (r.data.syncId === syncId || r.data.num === pm_num));
+      if(row){
+        const updated = { ...row.data, name: pm_title, num: pm_num, syncId,
+          hasSchedule: true, start: payload.start||row.data.start, end: payload.end||row.data.end };
+        await __sbUpsert('projekty', { id: row.id, data: updated });
+      }
+    }
   }catch(e){}
 
   // Powiadom panel przez BroadcastChannel
   try{const bc=new BroadcastChannel('pm_sync');bc.postMessage(payload);bc.close();}catch(e){}
+
+  // Jeśli tryb szablonu — zapisz też jako szablon
+  if(window.__PM_TEMPLATE_MODE__){
+    try{ await __sbUpsert('szablon', { id: 'main', html: newSrc }); }catch(e){}
+    const btn=document.querySelector('.save-btn');
+    if(btn){const orig=btn.textContent;btn.textContent='✓ Szablon zapisany';setTimeout(()=>{btn.textContent=orig;},1800);}
+    return;
+  }
 
   // Feedback wizualny
   const btn=document.querySelector('.save-btn');

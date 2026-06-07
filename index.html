@@ -21,6 +21,7 @@ body{font-family:'Barlow',sans-serif;background:var(--g1);color:var(--black);min
 .toolbar button:hover{background:#f5f3f0;box-shadow:0 2px 6px rgba(0,0,0,.13)}
 .toolbar .btn-add{background:var(--black);color:#fff;border-color:var(--black)}
 .toolbar .btn-add:hover{background:var(--g8)}
+.toolbar button:disabled{opacity:.35;cursor:not-allowed;pointer-events:none}
 .col-sep{width:1px;height:20px;background:var(--g3)}
 
 .filter-bar{padding:10px 32px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
@@ -35,7 +36,7 @@ body{font-family:'Barlow',sans-serif;background:var(--g1);color:var(--black);min
 .stat-val{font-family:'Barlow Condensed',sans-serif;font-size:28px;font-weight:700;color:var(--black);line-height:1}
 .stat-label{font-size:9px;font-weight:700;color:var(--g4);letter-spacing:.1em;text-transform:uppercase;margin-top:3px}
 
-.projects-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:12px}
+.projects-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:8px}
 
 .project-card{background:#fff;border:1px solid var(--g2);transition:box-shadow .15s,border-color .15s;position:relative;display:flex;flex-direction:column}
 .project-card:hover{box-shadow:0 4px 16px rgba(0,0,0,.10);border-color:var(--g3)}
@@ -44,35 +45,39 @@ body{font-family:'Barlow',sans-serif;background:var(--g1);color:var(--black);min
 .project-card.done .card-accent{background:var(--g4)}
 .project-card.planned .card-accent{background:#2980b9}
 .card-accent{width:100%;height:3px;flex-shrink:0}
-.card-body{padding:16px 18px;flex:1;display:flex;flex-direction:column}
-.card-top{display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:8px}
-.card-num{font-family:'Barlow Condensed',sans-serif;font-size:12px;font-weight:700;color:var(--g4);letter-spacing:.1em;text-transform:uppercase}
-.card-status{font-size:9px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;padding:2px 8px;border-radius:2px}
+.card-body{padding:10px 12px;flex:1;display:flex;flex-direction:column}
+.card-top{display:flex;align-items:flex-start;justify-content:space-between;gap:6px;margin-bottom:4px}
+.card-num{font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:700;color:var(--g4);letter-spacing:.1em;text-transform:uppercase}
+.card-status{font-size:9px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;padding:1px 6px;border-radius:2px}
 .status-active{background:#e8f8ee;color:#1a7a40}
 .status-paused{background:#fef3e8;color:#b85c00}
 .status-done{background:var(--g1);color:var(--g6)}
 .status-planned{background:#eef4fb;color:#1a5080}
-.card-name{font-family:'Barlow Condensed',sans-serif;font-size:18px;font-weight:700;color:var(--black);line-height:1.2;text-transform:uppercase;letter-spacing:.02em;margin-bottom:6px}
-.card-desc{font-size:12px;color:var(--g6);line-height:1.5;margin-bottom:12px;flex:1}
-.card-meta{display:flex;align-items:center;gap:12px;border-top:1px solid var(--g1);padding-top:10px}
+.card-name{font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:700;color:var(--black);line-height:1.2;text-transform:uppercase;letter-spacing:.02em;margin-bottom:4px}
+.card-desc{font-size:11px;color:var(--g6);line-height:1.4;margin-bottom:6px;flex:1}
+.card-meta{display:flex;align-items:center;gap:8px;border-top:1px solid var(--g1);padding-top:6px}
 .meta-item{display:flex;flex-direction:column;gap:1px}
-.meta-val{font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:700;color:var(--g8)}
-.meta-key{font-size:9px;font-weight:700;color:var(--g4);letter-spacing:.08em;text-transform:uppercase}
-.meta-sep{width:1px;height:28px;background:var(--g2)}
-.card-progress{margin-top:10px}
-.progress-label{display:flex;justify-content:space-between;margin-bottom:4px}
-.progress-text{font-size:9px;font-weight:700;color:var(--g4);letter-spacing:.08em;text-transform:uppercase}
-.progress-pct{font-size:9px;font-weight:700;color:var(--g8)}
-.progress-track{height:3px;background:var(--g2)}
+.meta-val{font-family:'Barlow Condensed',sans-serif;font-size:12px;font-weight:700;color:var(--g8)}
+.meta-key{font-size:8px;font-weight:700;color:var(--g4);letter-spacing:.08em;text-transform:uppercase}
+.meta-sep{width:1px;height:22px;background:var(--g2)}
+.card-progress{margin-top:6px}
+.progress-label{display:flex;justify-content:space-between;margin-bottom:3px}
+.progress-text{font-size:8px;font-weight:700;color:var(--g4);letter-spacing:.08em;text-transform:uppercase}
+.progress-pct{font-size:8px;font-weight:700;color:var(--g8)}
+.progress-track{height:2px;background:var(--g2)}
 .progress-fill{height:100%;background:var(--black);transition:width .3s ease}
 .project-card.active .progress-fill{background:#27ae60}
 .project-card.paused .progress-fill{background:#e67e22}
-.card-actions{padding:10px 18px;border-top:1px solid var(--g1);display:flex;gap:6px;background:var(--g1)}
-.action-btn{font-family:'Barlow',sans-serif;font-size:10px;font-weight:600;padding:3px 10px;cursor:pointer;border:1px solid #d0ccc8;background:#fff;color:#444;border-radius:3px;transition:all .12s;letter-spacing:.04em;text-transform:uppercase;height:24px;display:inline-flex;align-items:center;gap:4px}
+.card-actions{padding:6px 12px;border-top:1px solid var(--g1);display:flex;gap:5px;background:var(--g1)}
+.action-btn{font-family:'Barlow',sans-serif;font-size:10px;font-weight:600;padding:2px 8px;cursor:pointer;border:1px solid #d0ccc8;background:#fff;color:#444;border-radius:3px;transition:all .12s;letter-spacing:.04em;text-transform:uppercase;height:22px;display:inline-flex;align-items:center;gap:4px}
 .action-btn:hover{background:#f5f3f0;box-shadow:0 1px 4px rgba(0,0,0,.1)}
 .action-btn.primary{background:var(--black);color:#fff;border-color:var(--black)}
 .action-btn.primary:hover{background:var(--g8)}
 
+.project-card[draggable]{cursor:grab}
+.project-card[draggable]:active{cursor:grabbing}
+.project-card.drag-over{outline:2px dashed var(--g4);outline-offset:-2px;opacity:.6}
+.project-card.dragging{opacity:.35}
 .modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:500;display:none;align-items:center;justify-content:center}
 .modal-bg.open{display:flex}
 .modal{background:#fff;border:2px solid var(--black);padding:28px;width:420px;max-width:95vw;box-shadow:6px 6px 0 var(--black)}
@@ -122,6 +127,12 @@ body{font-family:'Barlow',sans-serif;background:var(--g1);color:var(--black);min
 <div class="toolbar">
   <button class="btn-add" id="btn-new">＋ Nowy projekt</button>
   <div class="col-sep"></div>
+  <button onclick="openZasoby()">👥 Zasoby</button>
+  <button onclick="openSzablon()">📋 Szablon</button>
+  <div class="col-sep"></div>
+  <button id="btn-undo" onclick="undo()" title="Cofnij">↩ Cofnij</button>
+  <button id="btn-redo" onclick="redo()" title="Powtórz">↪ Powtórz</button>
+  <div class="col-sep"></div>
   <button id="view-grid" onclick="setView('grid')">⊞ Kafelki</button>
   <button id="view-list" onclick="setView('list')">☰ Lista</button>
 </div>
@@ -130,8 +141,6 @@ body{font-family:'Barlow',sans-serif;background:var(--g1);color:var(--black);min
   <span class="filter-label">Status:</span>
   <button class="filter-btn active" onclick="setFilter('all',this)">Wszystkie</button>
   <button class="filter-btn" onclick="setFilter('active',this)">Aktywne</button>
-  <button class="filter-btn" onclick="setFilter('planned',this)">Planowane</button>
-  <button class="filter-btn" onclick="setFilter('paused',this)">Wstrzymane</button>
   <button class="filter-btn" onclick="setFilter('done',this)">Zakończone</button>
 </div>
 
@@ -147,7 +156,7 @@ body{font-family:'Barlow',sans-serif;background:var(--g1);color:var(--black);min
     <div class="field-row">
       <div class="field">
         <label>Numer projektu</label>
-        <input type="text" id="f-num" placeholder="np. 2026/001">
+        <input type="text" id="f-num" placeholder="0000000-000-000" maxlength="15" oninput="formatProjNum(this)">
       </div>
       <div class="field">
         <label>Status</label>
@@ -184,115 +193,123 @@ body{font-family:'Barlow',sans-serif;background:var(--g1);color:var(--black);min
 </div>
 
 <script>
+const SB_URL = 'https://qggsljbngjtlkzahapch.supabase.co';
+const SB_KEY = 'sb_publishable_WDcdhn0NY9IRrNFSlmldkA_kSI62e5p';
+
+// ── Supabase helpers ─────────────────────────────────────────────────────────
+async function sbGet(table, id) {
+  const url = id
+    ? `${SB_URL}/rest/v1/${table}?id=eq.${encodeURIComponent(id)}&limit=1`
+    : `${SB_URL}/rest/v1/${table}?select=*`;
+  const res = await fetch(url, { headers: sbHeaders() });
+  if (!res.ok) return null;
+  const rows = await res.json();
+  return id ? (rows[0] || null) : rows;
+}
+
+async function sbUpsert(table, row) {
+  const res = await fetch(`${SB_URL}/rest/v1/${table}`, {
+    method: 'POST',
+    headers: { ...sbHeaders(), 'Prefer': 'resolution=merge-duplicates' },
+    body: JSON.stringify(row),
+  });
+  return res.ok;
+}
+
+async function sbDelete(table, id) {
+  const res = await fetch(`${SB_URL}/rest/v1/${table}?id=eq.${encodeURIComponent(id)}`, {
+    method: 'DELETE', headers: sbHeaders(),
+  });
+  return res.ok;
+}
+
+function sbHeaders() {
+  return {
+    'apikey': SB_KEY,
+    'Authorization': `Bearer ${SB_KEY}`,
+    'Content-Type': 'application/json',
+  };
+}
+
+// Realtime WebSocket
+function sbRealtime(table, callback) {
+  const ws = new WebSocket(`${SB_URL.replace('https','wss')}/realtime/v1/websocket?apikey=${SB_KEY}&vsn=1.0.0`);
+  ws.onopen = () => {
+    ws.send(JSON.stringify({ topic: `realtime:public:${table}`, event: 'phx_join', payload: {}, ref: '1' }));
+  };
+  ws.onmessage = e => {
+    const msg = JSON.parse(e.data);
+    if (msg.event === 'INSERT' || msg.event === 'UPDATE' || msg.event === 'DELETE') {
+      callback(msg.event, msg.payload?.record);
+    }
+  };
+  ws.onclose = () => setTimeout(() => sbRealtime(table, callback), 3000); // auto-reconnect
+  return ws;
+}
+
 // ── Stan ─────────────────────────────────────────────────────────────────────
 let projects = [];
 let editId = null;
 let currentFilter = 'all';
 let currentSearch = '';
-let templateHTML = null; // cache szablonu
+let templateHTML = null;
 
-function loadProjects() {
-  try { projects = JSON.parse(localStorage.getItem('pm_projects') || '[]'); } catch(e) { projects = []; }
-}
-function saveProjects() {
-  // Zapisujemy TYLKO metadane — nigdy scheduleData w głównej liście
-  const slim = projects.map(p => {
-    const {scheduleData, ...meta} = p;
-    return meta;
-  });
-  localStorage.setItem('pm_projects', JSON.stringify(slim));
-}
-
-// Harmonogram trzymany osobno per projekt (klucz: pm_sched_{id})
-function saveSchedule(id, html) {
-  try { localStorage.setItem('pm_sched_' + id, html); return true; }
-  catch(e) {
-    // localStorage pełny — wyczyść najstarsze
-    for (const k of Object.keys(localStorage)) {
-      if (k.startsWith('pm_sched_') && k !== 'pm_sched_' + id) { localStorage.removeItem(k); break; }
+async function loadProjects() {
+  try {
+    const rows = await sbGet('projekty');
+    if (rows && rows.length > 0) {
+      projects = rows.map(r => r.data);
+    } else {
+      // Pierwszy raz — wstaw domyślny projekt MCD
+      projects = [{
+        id: '1', syncId: 'MCD', num: '4273001-012', name: 'MCD',
+        desc: '', status: 'active', start: '', end: '', progress: 0,
+        hasSchedule: true, scheduleUrl: '4273001-012-MCD_03_06_2026.html'
+      }];
+      await saveProjects();
     }
-    try { localStorage.setItem('pm_sched_' + id, html); return true; } catch(e2) { return false; }
+  } catch(e) {
+    projects = [];
   }
 }
-function loadSchedule(id) {
-  return localStorage.getItem('pm_sched_' + id);
+
+async function saveProjects() {
+  for (const p of projects) {
+    const { scheduleData, ...meta } = p;
+    await sbUpsert('projekty', { id: p.id, data: meta });
+  }
 }
 
-loadProjects();
+async function saveSchedule(syncId, html) {
+  await sbUpsert('harmonogramy', { sync_id: syncId, html });
+}
 
-// Projekty domyślne przy pierwszym uruchomieniu
-if (projects.length === 0) {
-  projects = [{
-    id: '1',
-    syncId: 'MCD',
-    num: '4273001-012',
-    name: 'MCD',
-    desc: '',
-    status: 'active',
-    start: '',
-    end: '',
-    progress: 0,
-    hasSchedule: true,
-    scheduleUrl: '4273001-012-MCD_03_06_2026.html'
-  }];
-  saveProjects();
+async function loadSchedule(syncId) {
+  const row = await sbGet('harmonogramy', syncId);
+  return row ? row.html : null;
 }
 
 // ── Szablon ──────────────────────────────────────────────────────────────────
-function getTemplate() {
-  if (templateHTML) return templateHTML;
-  try { templateHTML = localStorage.getItem('pm_template'); } catch(e) {}
-  return templateHTML;
-}
+function getTemplate() { return templateHTML; }
+function saveTemplateCache(html) { templateHTML = html; }
 
-function saveTemplate(html) {
+async function saveTemplateRemote(html) {
   templateHTML = html;
-  try { localStorage.setItem('pm_template', html); } catch(e) {}
-}
-
-// URL szablonu — ten sam folder co panel
-function templateURL() {
-  const base = window.location.href.replace(/\/[^/]*$/, '/');
-  return base + 'HARMONOGRAM_2026.html';
+  await sbUpsert('szablon', { id: 'main', html });
 }
 
 async function fetchTemplate() {
-  const res = await fetch(templateURL());
-  if (!res.ok) throw new Error(res.status + ' ' + res.statusText);
+  // Najpierw sprawdź czy użytkownik zapisał zaktualizowany szablon w Supabase
+  try {
+    const row = await sbGet('szablon', 'main');
+    if (row && row.html) return row.html;
+  } catch(e) {}
+  // Fallback — oryginalny plik z serwera
+  const loc = window.location.href;
+  const base = loc.endsWith('/') ? loc : loc.substring(0, loc.lastIndexOf('/') + 1);
+  const res = await fetch(base + 'HARMONOGRAM_2026.html');
+  if (!res.ok) throw new Error('Nie znaleziono pliku HARMONOGRAM_2026.html (' + res.status + ')');
   return res.text();
-}
-
-function makeBlankSchedule(src, projectName, projectNum) {
-  const startMarker = '// __STATE_START__';
-  const endMarker   = '// __STATE_END__';
-  const si = src.indexOf(startMarker);
-  const ei = src.indexOf(endMarker);
-  if (si < 0 || ei < 0) return src;
-  const blank = `// __STATE_START__
-let view='month';
-let viewStart=new Date();
-let cols=null;
-let calAlerts=[];
-let ustalenia=[];
-let tasks=[];
-let cbExpanded={};
-let expanded={};
-let editId=null,editParentId=null,nextId=1;
-let phaseSummaryConfig=[];
-let _psExpanded=false;
-// __STATE_END__`;
-  let result = src.slice(0, si) + blank + src.slice(ei + endMarker.length);
-  if (projectName || projectNum) {
-    const inject = `\n<script>document.addEventListener('DOMContentLoaded',function(){
-      var t=document.getElementById('project-title');
-      var n=document.getElementById('project-number');
-      if(t&&!t.value)t.value=${JSON.stringify(projectName||'')};
-      if(n&&!n.value)n.value=${JSON.stringify(projectNum||'')};
-      if(t)document.title=t.value||'Harmonogram';
-    });<\/script>`;
-    result = result.replace('</body>', inject + '\n</body>');
-  }
-  return result;
 }
 
 async function openNewFromTemplate(projectName, projectNum) {
@@ -300,33 +317,36 @@ async function openNewFromTemplate(projectName, projectNum) {
   if (!src) {
     try {
       src = await fetchTemplate();
-      saveTemplate(src);
+      saveTemplateCache(src);
     } catch(e) {
-      // Fallback file://  — poproś o plik ręcznie
       const input = document.createElement('input');
-      input.type = 'file';
-      input.accept = '.html';
+      input.type = 'file'; input.accept = '.html';
       input.onchange = e => {
-        const file = e.target.files[0];
-        if (!file) return;
+        const file = e.target.files[0]; if (!file) return;
         const reader = new FileReader();
-        reader.onload = ev => {
-          saveTemplate(ev.target.result);
-          openNewFromTemplate(projectName, projectNum);
-        };
+        reader.onload = ev => { saveTemplateCache(ev.target.result); openNewFromTemplate(projectName, projectNum); };
         reader.readAsText(file);
       };
       input.click();
-      showToast('Wybierz plik HARMONOGRAM_2026.html jako szablon');
+      showToast('Wybierz plik HARMONOGRAM_2026.html');
       return;
     }
   }
-  const blank = makeBlankSchedule(src, projectName, projectNum);
-  openInTab(blank);
+  openInTab(makeBlankSchedule(src, projectName, projectNum));
 }
 
 document.getElementById('btn-new').addEventListener('click', () => {
-  openNewFromTemplate('', '');
+  editId = null;
+  document.getElementById('modal-title').textContent = 'Nowy projekt';
+  document.getElementById('f-num').value      = '';
+  document.getElementById('f-name').value     = '';
+  document.getElementById('f-desc').value     = '';
+  document.getElementById('f-status').value   = 'active';
+  document.getElementById('f-start').value    = '';
+  document.getElementById('f-end').value      = '';
+  document.getElementById('f-progress').value = 0;
+  document.getElementById('btn-delete').style.display = 'none';
+  document.getElementById('modal-bg').classList.add('open');
 });
 
 function openInTab(html) {
@@ -398,24 +418,18 @@ function renderProjects() {
 }
 
 // ── Otwieranie harmonogramu ──────────────────────────────────────────────────
-function openSchedule(id) {
+async function openSchedule(id) {
   const p = projects.find(x => x.id === id);
   if (!p) return;
-
   const syncId = p.syncId || p.num || p.name.replace(/\s+/g,'_');
-
-  // Zapisany harmonogram
-  const stored = localStorage.getItem('pm_sched_src_' + syncId);
+  showToast('Ładowanie…');
+  const stored = await loadSchedule(syncId);
   if (stored) { openInTab(stored); return; }
-
-  // Fallback: zewnętrzny URL (demo projekt)
   if (p.scheduleUrl) { window.open(p.scheduleUrl, '_blank'); return; }
-
-  // Brak harmonogramu — otwórz pusty szablon powiązany z tym projektem
   openNewFromTemplate(p.name, p.num || syncId);
 }
 
-// ── Filtry / wyszukiwanie ────────────────────────────────────────────────────
+// ── Filtry ───────────────────────────────────────────────────────────────────
 function setFilter(f, el) {
   currentFilter = f;
   document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
@@ -430,11 +444,58 @@ function setView(v) {
   document.getElementById('projects-container').style.gridTemplateColumns = v === 'list' ? '1fr' : '';
 }
 
-// ── Modal edycji metadanych ──────────────────────────────────────────────────
+// ── Zasoby / Szablon ─────────────────────────────────────────────────────────
+function openZasoby() {
+  const loc = window.location.href;
+  const base = loc.endsWith('/') ? loc : loc.substring(0, loc.lastIndexOf('/') + 1);
+  window.open(base + 'ZASOBY_2026.html', '_blank');
+}
+
+async function openSzablon() {
+  showToast('Ładowanie szablonu…');
+  let src;
+  try {
+    src = await fetchTemplate();
+    saveTemplateCache(src);
+  } catch(e) {
+    // file:// fallback
+    const input = document.createElement('input');
+    input.type = 'file'; input.accept = '.html';
+    input.onchange = e => {
+      const file = e.target.files[0]; if (!file) return;
+      const reader = new FileReader();
+      reader.onload = ev => { saveTemplateCache(ev.target.result); openSzablon(); };
+      reader.readAsText(file);
+    };
+    input.click();
+    showToast('Wybierz plik HARMONOGRAM_2026.html');
+    return;
+  }
+  const inject = '<script>'
+    + 'window.__PM_TEMPLATE_MODE__=true;'
+    + 'document.addEventListener(\'DOMContentLoaded\',function(){'
+    + 'var btn=document.querySelector(\'.save-btn\');'
+    + 'if(btn){btn.title=\'Zapisz szablon\';btn.textContent=\'💾 Zapisz szablon\';}'
+    + '});'
+    + '<\/script>';
+  openInTab(src.replace('</body>', inject + '\n</body>'));
+}
+
+// ── Modal ────────────────────────────────────────────────────────────────────
+function formatNum(input) {
+  let v = input.value.replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
+  let out = '';
+  if (v.length > 0)  out += v.slice(0, 7);
+  if (v.length > 7)  out += '-' + v.slice(7, 10);
+  if (v.length > 10) out += '-' + v.slice(10, 13);
+  input.value = out;
+}
+
 function editProject(id) {
   const p = projects.find(x => x.id === id);
   if (!p) return;
   editId = id;
+  document.getElementById('modal-title').textContent = 'Edytuj projekt';
   document.getElementById('f-num').value      = p.num    || '';
   document.getElementById('f-name').value     = p.name   || '';
   document.getElementById('f-desc').value     = p.desc   || '';
@@ -442,81 +503,102 @@ function editProject(id) {
   document.getElementById('f-start').value    = p.start  || '';
   document.getElementById('f-end').value      = p.end    || '';
   document.getElementById('f-progress').value = p.progress || 0;
+  document.getElementById('btn-delete').style.display = '';
   document.getElementById('modal-bg').classList.add('open');
 }
-function closeModal() {
-  document.getElementById('modal-bg').classList.remove('open');
-}
-function saveProject() {
-  const p = projects.find(x => x.id === editId);
-  if (!p) return;
-  p.num      = document.getElementById('f-num').value.trim();
-  p.name     = document.getElementById('f-name').value.trim() || p.name;
-  p.desc     = document.getElementById('f-desc').value.trim();
-  p.status   = document.getElementById('f-status').value;
-  p.start    = document.getElementById('f-start').value;
-  p.end      = document.getElementById('f-end').value;
-  p.progress = parseInt(document.getElementById('f-progress').value) || 0;
-  saveProjects();
-  closeModal();
-  renderProjects();
-}
-function deleteProject() {
-  if (!confirm('Usunąć projekt?')) return;
-  localStorage.removeItem('pm_sched_' + editId);
-  projects = projects.filter(x => x.id !== editId);
-  saveProjects();
+function closeModal() { document.getElementById('modal-bg').classList.remove('open'); }
+
+async function saveProject() {
+  const num  = document.getElementById('f-num').value.trim();
+  const name = document.getElementById('f-name').value.trim();
+  if (!name) { alert('Podaj nazwę projektu'); return; }
+
+  if (editId) {
+    const p = projects.find(x => x.id === editId);
+    if (!p) return;
+    p.num = num; p.name = name;
+    p.syncId   = num || name.replace(/\s+/g,'_');
+    p.desc     = document.getElementById('f-desc').value.trim();
+    p.status   = document.getElementById('f-status').value;
+    p.start    = document.getElementById('f-start').value;
+    p.end      = document.getElementById('f-end').value;
+    p.progress = parseInt(document.getElementById('f-progress').value) || 0;
+    await sbUpsert('projekty', { id: p.id, data: p });
+  } else {
+    const id = Date.now().toString();
+    const syncId = num || name.replace(/\s+/g,'_');
+    const p = {
+      id, syncId, num, name,
+      desc:     document.getElementById('f-desc').value.trim(),
+      status:   document.getElementById('f-status').value,
+      start:    document.getElementById('f-start').value,
+      end:      document.getElementById('f-end').value,
+      progress: parseInt(document.getElementById('f-progress').value) || 0,
+      hasSchedule: false,
+    };
+    projects.push(p);
+    await sbUpsert('projekty', { id: p.id, data: p });
+  }
   closeModal();
   renderProjects();
 }
 
-// ── Synchronizacja z harmonogramem ──────────────────────────────────────────
-function applySync(payload) {
+async function deleteProject() {
+  if (!confirm('Usunąć projekt?')) return;
+  const p = projects.find(x => x.id === editId);
+  if (p) {
+    const syncId = p.syncId || p.num || p.name.replace(/\s+/g,'_');
+    await sbDelete('harmonogramy', syncId);
+  }
+  await sbDelete('projekty', editId);
+  projects = projects.filter(x => x.id !== editId);
+  closeModal();
+  renderProjects();
+}
+
+// ── Sync z harmonogramu ──────────────────────────────────────────────────────
+async function applySync(payload) {
   if (!payload || !payload.id) return;
   let p = projects.find(x => x.syncId === payload.id || (x.num && x.num === payload.num && payload.num));
   if (p) {
-    p.name  = payload.name || p.name;
-    p.num   = payload.num  || p.num;
+    p.name = payload.name || p.name;
+    p.num  = payload.num  || p.num;
     if (payload.start) p.start = payload.start;
     if (payload.end)   p.end   = payload.end;
-    p.syncId      = payload.id;
-    p.hasSchedule = true;
-    p.lastSynced  = payload.savedAt;
+    p.syncId = payload.id; p.hasSchedule = true; p.lastSynced = payload.savedAt;
+    await sbUpsert('projekty', { id: p.id, data: p });
     showToast('✓ Zapisano: ' + p.name);
   } else {
     const id = Date.now().toString();
     p = {
-      id, syncId: payload.id,
-      num: payload.num || '', name: payload.name || 'Nowy projekt',
-      desc: '',
-      status: 'active', start: payload.start || '', end: payload.end || '',
+      id, syncId: payload.id, num: payload.num || '', name: payload.name || 'Nowy projekt',
+      desc: '', status: 'active', start: payload.start || '', end: payload.end || '',
       progress: 0, hasSchedule: true, lastSynced: payload.savedAt
     };
     projects.push(p);
-    showToast('＋ Dodano projekt: ' + p.name);
+    await sbUpsert('projekty', { id: p.id, data: p });
+    showToast('＋ Dodano: ' + p.name);
   }
-  saveProjects();
   renderProjects();
 }
 
-try {
-  const bc = new BroadcastChannel('pm_sync');
-  bc.onmessage = e => applySync(e.data);
-} catch(e) {}
+// BroadcastChannel (ta sama przeglądarka)
+try { const bc = new BroadcastChannel('pm_sync'); bc.onmessage = e => applySync(e.data); } catch(e) {}
 
-function checkSyncQueue() {
-  try {
-    const queue = JSON.parse(localStorage.getItem('pm_sync_queue') || '[]');
-    queue.forEach(payload => {
-      const existing = projects.find(x => x.syncId === payload.id || (x.num && x.num === payload.num));
-      if (existing && existing.lastSynced === payload.savedAt) return;
-      applySync(payload);
-    });
-  } catch(e) {}
-}
-checkSyncQueue();
-setInterval(checkSyncQueue, 5000);
+// Realtime Supabase — projekty
+sbRealtime('projekty', async () => {
+  await loadProjects();
+  renderProjects();
+});
 
+// Realtime Supabase — harmonogramy (aktualizacja znacznika hasSchedule)
+sbRealtime('harmonogramy', async (event, record) => {
+  if (!record) return;
+  const p = projects.find(x => (x.syncId || x.num) === record.sync_id);
+  if (p) { p.hasSchedule = true; renderProjects(); }
+});
+
+// ── Toast ────────────────────────────────────────────────────────────────────
 function showToast(msg) {
   let t = document.getElementById('pm-toast');
   if (!t) {
@@ -531,7 +613,11 @@ function showToast(msg) {
   t._hide = setTimeout(() => { t.style.opacity = '0'; }, 3500);
 }
 
-renderProjects();
+// ── Init ─────────────────────────────────────────────────────────────────────
+(async () => {
+  await loadProjects();
+  renderProjects();
+})();
 </script>
 </body>
 </html>
