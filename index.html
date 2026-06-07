@@ -234,14 +234,17 @@ async function sbSignIn(email, password) {
 }
 
 async function sbSignOut() {
-  await fetch(`${SB_URL}/auth/v1/logout`, {
-    method: 'POST',
-    headers: { 'apikey': SB_KEY, 'Authorization': `Bearer ${_authToken}` },
-  });
+  try {
+    await fetch(`${SB_URL}/auth/v1/logout`, {
+      method: 'POST',
+      headers: { 'apikey': SB_KEY, 'Authorization': `Bearer ${_authToken}` },
+    });
+  } catch(e) {}
   _authToken = null; _authUser = null;
   sessionStorage.removeItem('sb_token');
   sessionStorage.removeItem('sb_user');
-  showLoginScreen();
+  // Pełne przeładowanie strony — najczystsze rozwiązanie
+  window.location.reload();
 }
 
 async function sbRefreshToken(refreshToken) {
@@ -716,6 +719,12 @@ async function doLogin() {
     hideLoginScreen();
     await loadProjects();
     renderProjects();
+    sbRealtime('projekty', async () => { await loadProjects(); renderProjects(); });
+    sbRealtime('harmonogramy', async (event, record) => {
+      if (!record) return;
+      const p = projects.find(x => (x.syncId || x.num) === record.sync_id);
+      if (p) { p.hasSchedule = true; renderProjects(); }
+    });
   } catch(e) {
     err.textContent = e.message; err.style.display = 'block';
     btn.textContent = 'Zaloguj'; btn.disabled = false;
