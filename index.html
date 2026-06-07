@@ -117,6 +117,10 @@ body{font-family:'Barlow',sans-serif;background:var(--g1);color:var(--black);min
     <div class="header-sub">Zarządzanie harmonogramami</div>
   </div>
   <div class="header-right">
+    <div id="user-info" style="display:none;align-items:center;gap:10px">
+      <span id="user-email" style="font-size:11px;color:var(--g4);letter-spacing:.06em"></span>
+      <button onclick="sbSignOut()" style="font-family:'Barlow',sans-serif;font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;padding:3px 12px;cursor:pointer;border:1px solid rgba(255,255,255,.2);background:transparent;color:var(--g4);border-radius:3px;height:24px">Wyloguj</button>
+    </div>
     <div class="search-wrap">
       <span class="search-icon">🔍</span>
       <input type="text" placeholder="Szukaj projektu…" id="search-input" oninput="filterProjects()">
@@ -124,14 +128,28 @@ body{font-family:'Barlow',sans-serif;background:var(--g1);color:var(--black);min
   </div>
 </header>
 
+<!-- LOGIN SCREEN -->
+<div id="login-screen" style="position:fixed;inset:0;background:var(--g1);z-index:1000;display:flex;align-items:center;justify-content:center">
+  <div style="background:#fff;border:2px solid var(--black);padding:40px;width:360px;max-width:95vw;box-shadow:6px 6px 0 var(--black)">
+    <div style="font-family:'Barlow Condensed',sans-serif;font-size:24px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;margin-bottom:4px">Panel projektów</div>
+    <div style="font-size:11px;color:var(--g4);letter-spacing:.1em;text-transform:uppercase;margin-bottom:28px">Zaloguj się aby kontynuować</div>
+    <div style="margin-bottom:14px">
+      <label style="font-size:10px;font-weight:700;color:var(--g6);text-transform:uppercase;letter-spacing:.08em;display:block;margin-bottom:4px">Email</label>
+      <input id="login-email" type="email" placeholder="twoj@email.com" style="width:100%;padding:8px 10px;font-size:13px;font-family:'Barlow',sans-serif;border:1.5px solid var(--g3);outline:none;background:#fff" onkeydown="if(event.key==='Enter')doLogin()">
+    </div>
+    <div style="margin-bottom:20px">
+      <label style="font-size:10px;font-weight:700;color:var(--g6);text-transform:uppercase;letter-spacing:.08em;display:block;margin-bottom:4px">Hasło</label>
+      <input id="login-password" type="password" placeholder="••••••••" style="width:100%;padding:8px 10px;font-size:13px;font-family:'Barlow',sans-serif;border:1.5px solid var(--g3);outline:none;background:#fff" onkeydown="if(event.key==='Enter')doLogin()">
+    </div>
+    <div id="login-error" style="font-size:11px;color:#c0392b;margin-bottom:12px;display:none"></div>
+    <button id="login-btn" onclick="doLogin()" style="width:100%;font-family:'Barlow',sans-serif;font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;padding:10px;cursor:pointer;border:1.5px solid var(--black);background:var(--black);color:#fff;height:40px">Zaloguj</button>
+  </div>
+</div>
+
 <div class="toolbar">
   <button class="btn-add" id="btn-new">＋ Nowy projekt</button>
   <div class="col-sep"></div>
   <button onclick="openZasoby()">👥 Zasoby</button>
-  <button onclick="openSzablon()">📋 Szablon</button>
-  <div class="col-sep"></div>
-  <button id="btn-undo" onclick="undo()" title="Cofnij">↩ Cofnij</button>
-  <button id="btn-redo" onclick="redo()" title="Powtórz">↪ Powtórz</button>
   <div class="col-sep"></div>
   <button id="view-grid" onclick="setView('grid')">⊞ Kafelki</button>
   <button id="view-list" onclick="setView('list')">☰ Lista</button>
@@ -196,7 +214,56 @@ body{font-family:'Barlow',sans-serif;background:var(--g1);color:var(--black);min
 const SB_URL = 'https://qggsljbngjtlkzahapch.supabase.co';
 const SB_KEY = 'sb_publishable_WDcdhn0NY9IRrNFSlmldkA_kSI62e5p';
 
-// ── Supabase helpers ─────────────────────────────────────────────────────────
+// ── Auth ─────────────────────────────────────────────────────────────────────
+let _authToken = null;
+let _authUser  = null;
+
+async function sbSignIn(email, password) {
+  const res = await fetch(`${SB_URL}/auth/v1/token?grant_type=password`, {
+    method: 'POST',
+    headers: { 'apikey': SB_KEY, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email, password }),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error_description || data.msg || 'Błąd logowania');
+  _authToken = data.access_token;
+  _authUser  = data.user;
+  sessionStorage.setItem('sb_token', _authToken);
+  sessionStorage.setItem('sb_user',  JSON.stringify(_authUser));
+  return data;
+}
+
+async function sbSignOut() {
+  await fetch(`${SB_URL}/auth/v1/logout`, {
+    method: 'POST',
+    headers: { 'apikey': SB_KEY, 'Authorization': `Bearer ${_authToken}` },
+  });
+  _authToken = null; _authUser = null;
+  sessionStorage.removeItem('sb_token');
+  sessionStorage.removeItem('sb_user');
+  showLoginScreen();
+}
+
+async function sbRefreshToken(refreshToken) {
+  const res = await fetch(`${SB_URL}/auth/v1/token?grant_type=refresh_token`, {
+    method: 'POST',
+    headers: { 'apikey': SB_KEY, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ refresh_token: refreshToken }),
+  });
+  if (!res.ok) return null;
+  const data = await res.json();
+  _authToken = data.access_token;
+  sessionStorage.setItem('sb_token', _authToken);
+  return data.access_token;
+}
+
+function sbHeaders() {
+  return {
+    'apikey': SB_KEY,
+    'Authorization': `Bearer ${_authToken || SB_KEY}`,
+    'Content-Type': 'application/json',
+  };
+}
 async function sbGet(table, id) {
   const url = id
     ? `${SB_URL}/rest/v1/${table}?id=eq.${encodeURIComponent(id)}&limit=1`
@@ -304,33 +371,35 @@ async function fetchTemplate() {
     const row = await sbGet('szablon', 'main');
     if (row && row.html) return row.html;
   } catch(e) {}
-  // Fallback — oryginalny plik z serwera
-  const loc = window.location.href;
+  // Pobierz plik z serwera — buduj URL względem aktualnej strony
+  const loc = window.location.href.split('?')[0]; // usuń query string
   const base = loc.endsWith('/') ? loc : loc.substring(0, loc.lastIndexOf('/') + 1);
-  const res = await fetch(base + 'HARMONOGRAM_2026.html');
-  if (!res.ok) throw new Error('Nie znaleziono pliku HARMONOGRAM_2026.html (' + res.status + ')');
+  const url = base + 'HARMONOGRAM_2026.html';
+  console.log('Fetching template from:', url);
+  const res = await fetch(url);
+  if (!res.ok) throw new Error('HTTP ' + res.status + ' — ' + url);
   return res.text();
 }
 
 async function openNewFromTemplate(projectName, projectNum) {
-  let src = getTemplate();
-  if (!src) {
-    try {
-      src = await fetchTemplate();
-      saveTemplateCache(src);
-    } catch(e) {
-      const input = document.createElement('input');
-      input.type = 'file'; input.accept = '.html';
-      input.onchange = e => {
-        const file = e.target.files[0]; if (!file) return;
-        const reader = new FileReader();
-        reader.onload = ev => { saveTemplateCache(ev.target.result); openNewFromTemplate(projectName, projectNum); };
-        reader.readAsText(file);
-      };
-      input.click();
-      showToast('Wybierz plik HARMONOGRAM_2026.html');
-      return;
-    }
+  let src;
+  try {
+    src = await fetchTemplate();
+    saveTemplateCache(src);
+  } catch(e) {
+    console.error('fetchTemplate failed:', e);
+    // Ostateczny fallback — file input
+    const input = document.createElement('input');
+    input.type = 'file'; input.accept = '.html';
+    input.onchange = ev => {
+      const file = ev.target.files[0]; if (!file) return;
+      const reader = new FileReader();
+      reader.onload = re => { saveTemplateCache(re.target.result); openNewFromTemplate(projectName, projectNum); };
+      reader.readAsText(file);
+    };
+    input.click();
+    showToast('Nie znaleziono szablonu — wybierz plik HARMONOGRAM_2026.html');
+    return;
   }
   openInTab(makeBlankSchedule(src, projectName, projectNum));
 }
@@ -424,9 +493,10 @@ async function openSchedule(id) {
   const syncId = p.syncId || p.num || p.name.replace(/\s+/g,'_');
   showToast('Ładowanie…');
   const stored = await loadSchedule(syncId);
-  if (stored) { openInTab(stored); return; }
-  if (p.scheduleUrl) { window.open(p.scheduleUrl, '_blank'); return; }
-  openNewFromTemplate(p.name, p.num || syncId);
+  if (stored) { openInTab(stored); showToast('✓ Otwarto'); return; }
+  if (p.scheduleUrl) { window.open(p.scheduleUrl, '_blank'); showToast('✓ Otwarto'); return; }
+  await openNewFromTemplate(p.name, p.num || syncId);
+  showToast('✓ Otwarto nowy harmonogram');
 }
 
 // ── Filtry ───────────────────────────────────────────────────────────────────
@@ -613,10 +683,62 @@ function showToast(msg) {
   t._hide = setTimeout(() => { t.style.opacity = '0'; }, 3500);
 }
 
+// ── Login ────────────────────────────────────────────────────────────────────
+function showLoginScreen() {
+  document.getElementById('login-screen').style.display = 'flex';
+  document.getElementById('user-info').style.display = 'none';
+}
+
+function hideLoginScreen() {
+  document.getElementById('login-screen').style.display = 'none';
+  document.getElementById('user-info').style.display = 'flex';
+  document.getElementById('user-email').textContent = _authUser?.email || '';
+}
+
+async function doLogin() {
+  const email    = document.getElementById('login-email').value.trim();
+  const password = document.getElementById('login-password').value;
+  const btn      = document.getElementById('login-btn');
+  const err      = document.getElementById('login-error');
+  if (!email || !password) { err.textContent = 'Wpisz email i hasło'; err.style.display = 'block'; return; }
+  btn.textContent = 'Logowanie…'; btn.disabled = true; err.style.display = 'none';
+  try {
+    await sbSignIn(email, password);
+    hideLoginScreen();
+    await loadProjects();
+    renderProjects();
+  } catch(e) {
+    err.textContent = e.message; err.style.display = 'block';
+    btn.textContent = 'Zaloguj'; btn.disabled = false;
+  }
+}
+
 // ── Init ─────────────────────────────────────────────────────────────────────
 (async () => {
-  await loadProjects();
-  renderProjects();
+  // Sprawdź czy jest zapisany token z poprzedniej sesji
+  const saved = sessionStorage.getItem('sb_token');
+  const savedUser = sessionStorage.getItem('sb_user');
+  if (saved) {
+    _authToken = saved;
+    try { _authUser = JSON.parse(savedUser); } catch(e) {}
+    try {
+      await loadProjects();
+      hideLoginScreen();
+      renderProjects();
+      // Uruchom realtime
+      sbRealtime('projekty', async () => { await loadProjects(); renderProjects(); });
+      sbRealtime('harmonogramy', async (event, record) => {
+        if (!record) return;
+        const p = projects.find(x => (x.syncId || x.num) === record.sync_id);
+        if (p) { p.hasSchedule = true; renderProjects(); }
+      });
+    } catch(e) {
+      // Token wygasł
+      showLoginScreen();
+    }
+  } else {
+    showLoginScreen();
+  }
 })();
 </script>
 </body>

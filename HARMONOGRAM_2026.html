@@ -731,20 +731,23 @@ thead th.dc{position:relative}
   <svg width="120" height="36" viewBox="0 0 120 36" class="logo-img" xmlns="http://www.w3.org/2000/svg"><text x="0" y="26" font-family="Barlow Condensed,sans-serif" font-size="24" font-weight="700" fill="#fff" letter-spacing="2">TECHMA</text></svg>
 </header>
 <div class="page">
+<div id="toolbar-toggle-bar" style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
+  <button id="toolbar-toggle-btn" onclick="toggleToolbar()" style="font-family:'Barlow',sans-serif;font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;padding:3px 12px;cursor:pointer;border:1px solid #d0ccc8;background:#fff;color:#888;border-radius:4px;height:24px;display:inline-flex;align-items:center;gap:5px">▼ Pokaż pasek narzędzi</button>
+  <button class="undo-btn" id="undo-btn" onclick="undo()" title="Cofnij ostatnią operację">↶ Cofnij</button>
+  <button class="undo-btn" id="redo-btn" onclick="redo()" title="Brak operacji do powtórzenia" disabled="">↷ Powtórz</button>
+</div>
+<div id="toolbar-wrap" style="display:none">
 <div class="toolbar">
   <button onclick="window.print()">🖨 Drukuj</button>
   <span class="col-sep"></span>
   <button class="notes-btn" onclick="openUstalenia()" title="Dziennik projektu">📋 Ustalenia<span class="notif-badge" id="ust-badge" style="display: none;">1</span></button>
   <span class="col-sep"></span>
   <button class="save-btn" onclick="saveHTML()" title="Zapisz zmiany w panelu projektów (bez pobierania pliku)">💾 Zapisz zmiany</button>
-  <button class="load-btn" onclick="exportHTML()" title="Pobierz plik HTML harmonogramu na dysk" style="border-color:#a8c8e8">⬇ Eksportuj HTML</button>
   <label class="load-btn" title="Wczytaj projekt z pliku JSON">📂 Wczytaj projekt<input type="file" accept=".json" style="display:none" onchange="loadProject(event)"></label>
   <span class="col-sep"></span>
   <button class="mech-btn" onclick="addMechanizm()">＋ MECHANIZM</button>
   <button class="clear-empty-btn" onclick="deleteEmptyTasks()" title="Usuń zadania, które nie mają ustawionych dat">🗑 Usuń puste</button>
   <button class="stats-toggle" id="stats-toggle-btn" onclick="toggleStats()" title="Statystyki projektu"><span id="stats-toggle-icon">＋</span> Statystyki</button>
-  <button class="undo-btn" id="undo-btn" onclick="undo()" title="Cofnij ostatnią operację (10 w historii)">↶ Cofnij</button>
-  <button class="undo-btn" id="redo-btn" onclick="redo()" title="Brak operacji do powtórzenia" disabled="">↷ Powtórz</button>
 </div>
 <div class="toolbar toolbar-row2">
   <span class="tlabel">Widok:</span>
@@ -758,6 +761,7 @@ thead th.dc{position:relative}
   <button class="tog" id="tow" onclick="toggleCol('weeks')">Tyg.</button>
   <button class="tog" id="tom" onclick="toggleCol('mp')">Manpower</button>
   <button class="tmpl-btn" onclick="openTmplEditor()" title="Edytuj strukturę szablonu projektu">Edytuj szablon</button>
+</div>
 </div>
 
 <div id="stats-popout-wrap" style="display:none;text-align:right;margin-bottom:4px"><button id="stats-popout-btn" onclick="openStatsWindow()" style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;cursor:pointer;border:1px solid var(--g3);background:var(--white);color:var(--g6);padding:2px 8px;font-family:'Barlow',sans-serif" title="Otwórz statystyki w nowym oknie">↗ Otwórz w nowym oknie</button></div>
@@ -5669,11 +5673,12 @@ function tmplSaveAsNew(){
 
 const __SB_URL = 'https://qggsljbngjtlkzahapch.supabase.co';
 const __SB_KEY = 'sb_publishable_WDcdhn0NY9IRrNFSlmldkA_kSI62e5p';
+function __sbToken(){ return sessionStorage.getItem('sb_token') || __SB_KEY; }
 async function __sbUpsert(table, row) {
   await fetch(`${__SB_URL}/rest/v1/${table}`, {
     method: 'POST',
     headers: {
-      'apikey': __SB_KEY, 'Authorization': `Bearer ${__SB_KEY}`,
+      'apikey': __SB_KEY, 'Authorization': `Bearer ${__sbToken()}`,
       'Content-Type': 'application/json', 'Prefer': 'resolution=merge-duplicates'
     },
     body: JSON.stringify(row),
@@ -5710,6 +5715,15 @@ let _psExpanded=${_psExpanded};
   return src.slice(0,si)+newBlock+tail;
 }
 
+function toggleToolbar(){
+  const wrap = document.getElementById('toolbar-wrap');
+  const btn  = document.getElementById('toolbar-toggle-btn');
+  const vis  = wrap.style.display === 'none';
+  wrap.style.display = vis ? 'block' : 'none';
+  btn.textContent    = vis ? '▲ Ukryj pasek narzędzi' : '▼ Pokaż pasek narzędzi';
+  btn.style.color    = vis ? '#333' : '#888';
+}
+
 async function saveHTML(){
   const pm_title=document.getElementById('project-title').value||'Nowy projekt';
   const pm_num=document.getElementById('project-number').value||'';
@@ -5744,7 +5758,7 @@ async function saveHTML(){
   // Aktualizuj metadane projektu w Supabase
   try{
     const allRes = await fetch(`${__SB_URL}/rest/v1/projekty?select=*`, {
-      headers: { 'apikey': __SB_KEY, 'Authorization': `Bearer ${__SB_KEY}` }
+      headers: { 'apikey': __SB_KEY, 'Authorization': `Bearer ${__sbToken()}` }
     });
     if(allRes.ok){
       const rows = await allRes.json();
