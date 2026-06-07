@@ -119,6 +119,7 @@ body{font-family:'Barlow',sans-serif;background:var(--g1);color:var(--black);min
   <div class="header-right">
     <div id="user-info" style="display:none;align-items:center;gap:10px">
       <span id="user-email" style="font-size:11px;color:var(--g4);letter-spacing:.06em"></span>
+      <button onclick="openChangePassword()" style="font-family:'Barlow',sans-serif;font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;padding:3px 12px;cursor:pointer;border:1px solid rgba(255,255,255,.2);background:transparent;color:var(--g4);border-radius:3px;height:24px">Zmień hasło</button>
       <button onclick="sbSignOut()" style="font-family:'Barlow',sans-serif;font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;padding:3px 12px;cursor:pointer;border:1px solid rgba(255,255,255,.2);background:transparent;color:var(--g4);border-radius:3px;height:24px">Wyloguj</button>
     </div>
     <div class="search-wrap">
@@ -137,12 +138,52 @@ body{font-family:'Barlow',sans-serif;background:var(--g1);color:var(--black);min
       <label style="font-size:10px;font-weight:700;color:var(--g6);text-transform:uppercase;letter-spacing:.08em;display:block;margin-bottom:4px">Email</label>
       <input id="login-email" type="email" placeholder="twoj@email.com" style="width:100%;padding:8px 10px;font-size:13px;font-family:'Barlow',sans-serif;border:1.5px solid var(--g3);outline:none;background:#fff" onkeydown="if(event.key==='Enter')doLogin()">
     </div>
-    <div style="margin-bottom:20px">
+    <div style="margin-bottom:8px">
       <label style="font-size:10px;font-weight:700;color:var(--g6);text-transform:uppercase;letter-spacing:.08em;display:block;margin-bottom:4px">Hasło</label>
       <input id="login-password" type="password" placeholder="••••••••" style="width:100%;padding:8px 10px;font-size:13px;font-family:'Barlow',sans-serif;border:1.5px solid var(--g3);outline:none;background:#fff" onkeydown="if(event.key==='Enter')doLogin()">
     </div>
+    <div style="margin-bottom:20px;text-align:right">
+      <button onclick="openForgotPassword()" style="font-family:'Barlow',sans-serif;font-size:10px;font-weight:600;color:var(--g4);background:none;border:none;cursor:pointer;letter-spacing:.04em;padding:0;text-decoration:underline">Zapomniałem hasła</button>
+    </div>
     <div id="login-error" style="font-size:11px;color:#c0392b;margin-bottom:12px;display:none"></div>
     <button id="login-btn" onclick="doLogin()" style="width:100%;font-family:'Barlow',sans-serif;font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;padding:10px;cursor:pointer;border:1.5px solid var(--black);background:var(--black);color:#fff;height:40px">Zaloguj</button>
+  </div>
+</div>
+
+<!-- RESET HASŁA MODAL -->
+<div id="forgot-modal" style="position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:1100;display:none;align-items:center;justify-content:center">
+  <div style="background:#fff;border:2px solid var(--black);padding:32px;width:360px;max-width:95vw;box-shadow:6px 6px 0 var(--black)" onclick="event.stopPropagation()">
+    <div style="font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;margin-bottom:20px">Reset hasła</div>
+    <div style="font-size:12px;color:var(--g6);margin-bottom:16px">Wpisz swój email — wyślemy link do zresetowania hasła.</div>
+    <div style="margin-bottom:16px">
+      <label style="font-size:10px;font-weight:700;color:var(--g6);text-transform:uppercase;letter-spacing:.08em;display:block;margin-bottom:4px">Email</label>
+      <input id="forgot-email" type="email" placeholder="twoj@email.com" style="width:100%;padding:8px 10px;font-size:13px;font-family:'Barlow',sans-serif;border:1.5px solid var(--g3);outline:none;background:#fff" onkeydown="if(event.key==='Enter')doForgotPassword()">
+    </div>
+    <div id="forgot-msg" style="font-size:11px;margin-bottom:12px;display:none"></div>
+    <div style="display:flex;gap:8px;justify-content:flex-end">
+      <button onclick="closeForgotPassword()" style="font-family:'Barlow',sans-serif;font-size:11px;font-weight:700;padding:6px 18px;cursor:pointer;border:1.5px solid var(--black);background:#fff;color:var(--black);letter-spacing:.04em;text-transform:uppercase;height:32px">Anuluj</button>
+      <button id="forgot-btn" onclick="doForgotPassword()" style="font-family:'Barlow',sans-serif;font-size:11px;font-weight:700;padding:6px 18px;cursor:pointer;border:1.5px solid var(--black);background:var(--black);color:#fff;letter-spacing:.04em;text-transform:uppercase;height:32px">Wyślij link</button>
+    </div>
+  </div>
+</div>
+
+<!-- ZMIANA HASŁA MODAL -->
+<div id="change-pwd-modal" style="position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:1100;display:none;align-items:center;justify-content:center">
+  <div style="background:#fff;border:2px solid var(--black);padding:32px;width:360px;max-width:95vw;box-shadow:6px 6px 0 var(--black)" onclick="event.stopPropagation()">
+    <div style="font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;margin-bottom:20px">Zmień hasło</div>
+    <div style="margin-bottom:14px">
+      <label style="font-size:10px;font-weight:700;color:var(--g6);text-transform:uppercase;letter-spacing:.08em;display:block;margin-bottom:4px">Nowe hasło</label>
+      <input id="new-password" type="password" placeholder="••••••••" style="width:100%;padding:8px 10px;font-size:13px;font-family:'Barlow',sans-serif;border:1.5px solid var(--g3);outline:none;background:#fff">
+    </div>
+    <div style="margin-bottom:20px">
+      <label style="font-size:10px;font-weight:700;color:var(--g6);text-transform:uppercase;letter-spacing:.08em;display:block;margin-bottom:4px">Powtórz hasło</label>
+      <input id="new-password2" type="password" placeholder="••••••••" style="width:100%;padding:8px 10px;font-size:13px;font-family:'Barlow',sans-serif;border:1.5px solid var(--g3);outline:none;background:#fff">
+    </div>
+    <div id="change-pwd-msg" style="font-size:11px;margin-bottom:12px;display:none"></div>
+    <div style="display:flex;gap:8px;justify-content:flex-end">
+      <button onclick="closeChangePassword()" style="font-family:'Barlow',sans-serif;font-size:11px;font-weight:700;padding:6px 18px;cursor:pointer;border:1.5px solid var(--black);background:#fff;color:var(--black);letter-spacing:.04em;text-transform:uppercase;height:32px">Anuluj</button>
+      <button id="change-pwd-btn" onclick="doChangePassword()" style="font-family:'Barlow',sans-serif;font-size:11px;font-weight:700;padding:6px 18px;cursor:pointer;border:1.5px solid var(--black);background:var(--black);color:#fff;letter-spacing:.04em;text-transform:uppercase;height:32px">Zapisz</button>
+    </div>
   </div>
 </div>
 
@@ -695,7 +736,81 @@ function showToast(msg) {
   t._hide = setTimeout(() => { t.style.opacity = '0'; }, 3500);
 }
 
-// ── Login ────────────────────────────────────────────────────────────────────
+// ── Reset hasła ──────────────────────────────────────────────────────────────
+function openForgotPassword() {
+  document.getElementById('forgot-email').value = document.getElementById('login-email').value || '';
+  document.getElementById('forgot-msg').style.display = 'none';
+  document.getElementById('forgot-modal').style.display = 'flex';
+}
+function closeForgotPassword() {
+  document.getElementById('forgot-modal').style.display = 'none';
+}
+async function doForgotPassword() {
+  const email = document.getElementById('forgot-email').value.trim();
+  const btn   = document.getElementById('forgot-btn');
+  const msg   = document.getElementById('forgot-msg');
+  if (!email) { msg.textContent = 'Wpisz adres email'; msg.style.color = '#c0392b'; msg.style.display = 'block'; return; }
+  btn.textContent = 'Wysyłanie…'; btn.disabled = true;
+  try {
+    const res = await fetch(`${SB_URL}/auth/v1/recover`, {
+      method: 'POST',
+      headers: { 'apikey': SB_KEY, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email }),
+    });
+    msg.textContent = 'Link do resetowania hasła został wysłany na podany adres email.';
+    msg.style.color = '#27ae60';
+    msg.style.display = 'block';
+    btn.textContent = 'Wysłano ✓';
+  } catch(e) {
+    msg.textContent = 'Błąd wysyłania. Spróbuj ponownie.';
+    msg.style.color = '#c0392b';
+    msg.style.display = 'block';
+    btn.textContent = 'Wyślij link'; btn.disabled = false;
+  }
+}
+
+// ── Zmiana hasła ─────────────────────────────────────────────────────────────
+function openChangePassword() {
+  document.getElementById('new-password').value  = '';
+  document.getElementById('new-password2').value = '';
+  document.getElementById('change-pwd-msg').style.display = 'none';
+  document.getElementById('change-pwd-btn').textContent = 'Zapisz';
+  document.getElementById('change-pwd-btn').disabled = false;
+  document.getElementById('change-pwd-modal').style.display = 'flex';
+}
+function closeChangePassword() {
+  document.getElementById('change-pwd-modal').style.display = 'none';
+}
+async function doChangePassword() {
+  const p1  = document.getElementById('new-password').value;
+  const p2  = document.getElementById('new-password2').value;
+  const btn = document.getElementById('change-pwd-btn');
+  const msg = document.getElementById('change-pwd-msg');
+  if (!p1) { msg.textContent = 'Wpisz nowe hasło'; msg.style.color = '#c0392b'; msg.style.display = 'block'; return; }
+  if (p1 !== p2) { msg.textContent = 'Hasła nie są identyczne'; msg.style.color = '#c0392b'; msg.style.display = 'block'; return; }
+  if (p1.length < 6) { msg.textContent = 'Hasło musi mieć minimum 6 znaków'; msg.style.color = '#c0392b'; msg.style.display = 'block'; return; }
+  btn.textContent = 'Zapisywanie…'; btn.disabled = true;
+  try {
+    const res = await fetch(`${SB_URL}/auth/v1/user`, {
+      method: 'PUT',
+      headers: { 'apikey': SB_KEY, 'Authorization': `Bearer ${_authToken}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ password: p1 }),
+    });
+    if (!res.ok) throw new Error('Błąd zmiany hasła');
+    msg.textContent = 'Hasło zostało zmienione.';
+    msg.style.color = '#27ae60';
+    msg.style.display = 'block';
+    btn.textContent = 'Zapisano ✓';
+    setTimeout(() => closeChangePassword(), 2000);
+  } catch(e) {
+    msg.textContent = e.message;
+    msg.style.color = '#c0392b';
+    msg.style.display = 'block';
+    btn.textContent = 'Zapisz'; btn.disabled = false;
+  }
+}
+
+// ── Login ─────────────────────────────────────────────────────────────────────
 function showLoginScreen() {
   document.getElementById('login-screen').style.display = 'flex';
   document.getElementById('user-info').style.display = 'none';
