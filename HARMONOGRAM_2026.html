@@ -5857,7 +5857,9 @@ function toggleToolbar(){
 async function saveHTML(){
   const pm_title=document.getElementById('project-title').value||'Nowy projekt';
   const pm_num=document.getElementById('project-number').value||'';
-  const syncId=pm_num||pm_title.replace(/\s+/g,'_');
+  // Użyj syncId z URL (przekazanego z panelu) — gwarantuje dopasowanie projektu
+  const urlSyncId=new URLSearchParams(window.location.search).get('syncId')||sessionStorage.getItem('sb_syncId')||'';
+  const syncId=urlSyncId||pm_num||pm_title.replace(/\s+/g,'_');
 
   // Zbuduj aktualny HTML ze stanem
   const newSrc=_buildNewSrc();

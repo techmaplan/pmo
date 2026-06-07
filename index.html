@@ -406,13 +406,14 @@ async function loadSchedule(syncId) {
   return rows[0] ? rows[0].html : null;
 }
 
-function injectTokenIntoHtml(html) {
-  // Wstrzyknij token do HTML żeby autozapis działał z blob URL
+function injectTokenIntoHtml(html, syncId) {
   const token = _authToken || '';
   const inject = `<script>
     (function(){
       var t = '${token}';
+      var s = '${syncId}';
       if(t) sessionStorage.setItem('sb_token', t);
+      if(s) sessionStorage.setItem('sb_syncId', s);
     })();
   <\/script>`;
   return html.replace('<head>', '<head>' + inject);
@@ -559,17 +560,17 @@ async function openSchedule(id) {
 
   // Zapisany harmonogram w Supabase
   const stored = await loadSchedule(syncId);
-  if (stored) { openInTab(injectTokenIntoHtml(stored)); showToast('✓ Otwarto'); return; }
+  if (stored) { openInTab(injectTokenIntoHtml(stored, syncId)); showToast('✓ Otwarto'); return; }
 
   // Fallback URL (projekt MCD i inne z scheduleUrl)
   if (p.scheduleUrl) {
-    const params = new URLSearchParams({ token });
+    const params = new URLSearchParams({ token, syncId });
     window.open(base + p.scheduleUrl + '?' + params.toString(), '_blank');
     showToast('✓ Otwarto'); return;
   }
 
   // Nowy projekt — otwórz szablon z parametrami
-  const params = new URLSearchParams({ name: p.name, num: p.num || syncId, token });
+  const params = new URLSearchParams({ name: p.name, num: p.num || syncId, token, syncId });
   window.open(base + 'HARMONOGRAM_2026.html?' + params.toString(), '_blank');
   showToast('✓ Otwarto nowy harmonogram');
 }
