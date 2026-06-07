@@ -397,8 +397,25 @@ async function saveSchedule(syncId, html) {
 }
 
 async function loadSchedule(syncId) {
-  const row = await sbGet('harmonogramy', syncId);
-  return row ? row.html : null;
+  const res = await fetch(
+    `${SB_URL}/rest/v1/harmonogramy?sync_id=eq.${encodeURIComponent(syncId)}&limit=1`,
+    { headers: sbHeaders() }
+  );
+  if (!res.ok) return null;
+  const rows = await res.json();
+  return rows[0] ? rows[0].html : null;
+}
+
+function injectTokenIntoHtml(html) {
+  // Wstrzyknij token do HTML żeby autozapis działał z blob URL
+  const token = _authToken || '';
+  const inject = `<script>
+    (function(){
+      var t = '${token}';
+      if(t) sessionStorage.setItem('sb_token', t);
+    })();
+  <\/script>`;
+  return html.replace('<head>', '<head>' + inject);
 }
 
 // ── Szablon ──────────────────────────────────────────────────────────────────
@@ -542,7 +559,7 @@ async function openSchedule(id) {
 
   // Zapisany harmonogram w Supabase
   const stored = await loadSchedule(syncId);
-  if (stored) { openInTab(stored); showToast('✓ Otwarto'); return; }
+  if (stored) { openInTab(injectTokenIntoHtml(stored)); showToast('✓ Otwarto'); return; }
 
   // Fallback URL (projekt MCD i inne z scheduleUrl)
   if (p.scheduleUrl) {
