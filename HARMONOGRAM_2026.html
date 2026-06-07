@@ -2518,6 +2518,10 @@ document.addEventListener('DOMContentLoaded', function(){
   const n = document.getElementById('project-number');
   if (urlName && t && !t.value) { t.value = urlName; document.title = urlName; }
   if (urlNum  && n && !n.value) { n.value = urlNum; }
+  // Autozapis — przypisz harmonogram do projektu od razu po otwarciu
+  if (urlName || urlNum) {
+    setTimeout(() => saveHTML(), 1500);
+  }
 });
 // Also run now (in case DOM already ready)
 if (document.readyState !== 'loading') setTimeout(renderCalAlerts, 200);
