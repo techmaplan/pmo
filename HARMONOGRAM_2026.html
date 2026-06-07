@@ -5702,7 +5702,7 @@ function __sbToken(){
   return sessionStorage.getItem('sb_token') || __SB_KEY;
 }
 async function __sbUpsert(table, row) {
-  await fetch(`${__SB_URL}/rest/v1/${table}`, {
+  const res = await fetch(`${__SB_URL}/rest/v1/${table}`, {
     method: 'POST',
     headers: {
       'apikey': __SB_KEY, 'Authorization': `Bearer ${__sbToken()}`,
@@ -5710,6 +5710,11 @@ async function __sbUpsert(table, row) {
     },
     body: JSON.stringify(row),
   });
+  if (!res.ok) {
+    const err = await res.text();
+    throw new Error(`Supabase ${table} error ${res.status}: ${err}`);
+  }
+  return res;
 }
 
 function _buildNewSrc(){
@@ -5877,7 +5882,7 @@ async function saveHTML(){
   try{
     await __sbUpsert('harmonogramy', { sync_id: syncId, html: newSrc });
   }catch(e){
-    alert('Błąd zapisu: ' + e.message); return;
+    console.error('Błąd zapisu:', e); _showAutosaveStatus('Błąd zapisu: ' + e.message, 'err'); return;
   }
 
   // Aktualizuj metadane projektu w Supabase
