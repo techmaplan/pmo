@@ -6994,6 +6994,62 @@ loadFromSupabase().then(() => {
   else if(typeof renderAll==='function') renderAll();
 });
 startZasobyRealtime();
+setTimeout(__startPresence, 2000);
+
+
+// ── Presence ─────────────────────────────────────────────────────────────────
+const __PRESENCE_COLORS = ['#e74c3c','#3498db','#2ecc71','#f39c12','#9b59b6','#1abc9c','#e67e22','#e91e63'];
+function __presenceColor(email) {
+  let h = 0; for (let i = 0; i < email.length; i++) h = (h * 31 + email.charCodeAt(i)) & 0xffffffff;
+  return __PRESENCE_COLORS[Math.abs(h) % __PRESENCE_COLORS.length];
+}
+function __presenceInitials(email) {
+  const name = email.split('@')[0];
+  const parts = name.split(/[._-]/);
+  if (parts.length >= 2) return (parts[0][0] + parts[1][0]).toUpperCase();
+  return name.slice(0, 2).toUpperCase();
+}
+let __presenceUsers = {};
+function __startPresence() {
+  const token = __sbToken();
+  if (!token || token === __SB_KEY) return;
+  let email = '';
+  try { email = JSON.parse(atob(token.split('.')[1])).email || ''; } catch(e) { return; }
+  if (!email) return;
+  const channel = 'presence:zasoby';
+  const ws = new WebSocket(`${__SB_URL.replace('https','wss')}/realtime/v1/websocket?apikey=${__SB_KEY}&vsn=1.0.0`);
+  ws.onopen = () => {
+    ws.send(JSON.stringify({topic:`realtime:${channel}`,event:'phx_join',payload:{config:{presence:{key:email}}},ref:'p1'}));
+    ws.send(JSON.stringify({topic:`realtime:${channel}`,event:'presence',payload:{type:'track',payload:{email,online_at:new Date().toISOString()}},ref:'p2'}));
+    __renderPresenceBar(email);
+  };
+  ws.onmessage = e => {
+    try {
+      const msg = JSON.parse(e.data);
+      if (msg.event==='presence_state'||msg.event==='presence_diff') {
+        if(msg.payload?.joins) Object.entries(msg.payload.joins).forEach(([k,v])=>{if(v.metas?.[0])__presenceUsers[k]=v.metas[0];});
+        if(msg.payload?.leaves) Object.keys(msg.payload.leaves).forEach(k=>delete __presenceUsers[k]);
+        __renderPresenceBar(email);
+      }
+    } catch(e){}
+  };
+  ws.onclose = () => setTimeout(__startPresence, 5000);
+  setInterval(()=>{if(ws.readyState===1)ws.send(JSON.stringify({topic:'phoenix',event:'heartbeat',payload:{},ref:'hb'}));},30000);
+}
+function __renderPresenceBar(myEmail) {
+  let bar = document.getElementById('__presence_bar__');
+  if (!bar) {
+    bar = document.createElement('div');
+    bar.id = '__presence_bar__';
+    bar.style.cssText = 'display:flex;align-items:center;gap:4px;padding:0 12px';
+    const header = document.querySelector('header') || document.body;
+    header.appendChild(bar);
+  }
+  const others = Object.keys(__presenceUsers).filter(e => e !== myEmail);
+  if (!others.length) { bar.innerHTML = ''; return; }
+  bar.innerHTML = '<span style="font-size:9px;font-weight:700;color:#888;letter-spacing:.06em;text-transform:uppercase;margin-right:2px">Online:</span>'
+    + others.map(email => `<div title="${email}" style="width:24px;height:24px;border-radius:50%;background:${__presenceColor(email)};display:flex;align-items:center;justify-content:center;font-family:Barlow,sans-serif;font-size:9px;font-weight:700;color:#fff;cursor:default;border:2px solid #fff;box-shadow:0 1px 3px rgba(0,0,0,.2)">${__presenceInitials(email)}</div>`).join('');
+}
 
 async function saveZasoby(){
   const data = { employees, tasks, assignments, nextEmpId, manualBars, nextBarId,

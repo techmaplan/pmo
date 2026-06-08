@@ -558,21 +558,15 @@ async function openSchedule(id) {
   const token = _authToken || '';
   showToast('Ładowanie…');
 
-  // Zapisany harmonogram w Supabase
-  const stored = await loadSchedule(syncId);
-  if (stored) { openInTab(injectTokenIntoHtml(stored, syncId)); showToast('✓ Otwarto'); return; }
+  const params = new URLSearchParams({ token, syncId, name: p.name, num: p.num || syncId });
 
-  // Fallback URL (projekt MCD i inne z scheduleUrl)
+  // Projekt MCD ma własny plik
   if (p.scheduleUrl) {
-    const params = new URLSearchParams({ token, syncId });
     window.open(base + p.scheduleUrl + '?' + params.toString(), '_blank');
-    showToast('✓ Otwarto'); return;
+  } else {
+    window.open(base + 'HARMONOGRAM_2026.html?' + params.toString(), '_blank');
   }
-
-  // Nowy projekt — otwórz szablon z parametrami
-  const params = new URLSearchParams({ name: p.name, num: p.num || syncId, token, syncId });
-  window.open(base + 'HARMONOGRAM_2026.html?' + params.toString(), '_blank');
-  showToast('✓ Otwarto nowy harmonogram');
+  showToast('✓ Otwarto');
 }
 
 // ── Filtry ───────────────────────────────────────────────────────────────────
