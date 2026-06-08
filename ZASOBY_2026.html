@@ -2849,7 +2849,11 @@ let redoHistory = [];
 const STORAGE_KEY = 'techma_resources_v5';
 const __SB_URL = 'https://qggsljbngjtlkzahapch.supabase.co';
 const __SB_KEY = 'sb_publishable_WDcdhn0NY9IRrNFSlmldkA_kSI62e5p';
-function __sbToken(){ return sessionStorage.getItem('sb_token') || __SB_KEY; }
+function __sbToken(){
+  const urlToken = new URLSearchParams(window.location.search).get('token');
+  if(urlToken) { sessionStorage.setItem('sb_token', urlToken); return urlToken; }
+  return sessionStorage.getItem('sb_token') || __SB_KEY;
+}
 async function __sbUpsert(table, row) {
   await fetch(`${__SB_URL}/rest/v1/${table}`, {
     method: 'POST',
@@ -4365,6 +4369,31 @@ renderWorkload();
 function ganttGoToday(){
 ganttOffset = 0;
 renderWorkload();
+
+function scrollToToday(){
+const ganttRight = document.getElementById('gantt-right');
+const ganttHeadScroll = document.getElementById('gantt-head-scroll');
+if(!ganttRight) return;
+const todayCell = document.querySelector('.gantt-day-cell.today');
+if(todayCell){
+const cellLeft = todayCell.offsetLeft;
+const cellW = todayCell.offsetWidth;
+const viewW = ganttRight.clientWidth;
+const target = Math.max(0, cellLeft - viewW/2 + cellW/2);
+ganttRight.scrollLeft = target;
+if(ganttHeadScroll) ganttHeadScroll.scrollLeft = target;
+} else {
+const today = new Date();
+const startDate = _getGanttStartDate ? _getGanttStartDate() : null;
+if(startDate){
+const days = Math.round((today - startDate) / 86400000);
+const dayW = ganttZoom;
+const target = Math.max(0, days * dayW - ganttRight.clientWidth/2);
+ganttRight.scrollLeft = target;
+if(ganttHeadScroll) ganttHeadScroll.scrollLeft = target;
+}
+}
+}
 
 setTimeout(()=>{
 const ganttRight = document.getElementById('gantt-right');
@@ -6992,6 +7021,7 @@ init();
 loadFromSupabase().then(() => {
   if(typeof render==='function') render();
   else if(typeof renderAll==='function') renderAll();
+  setTimeout(scrollToToday, 200);
 });
 startZasobyRealtime();
 setTimeout(__startPresence, 2000);
@@ -7082,7 +7112,7 @@ async function loadFromSupabase(){
     if(d.nextAbsenceId)  nextAbsenceId  = d.nextAbsenceId;
     if(d.subcontractors) subcontractors = d.subcontractors;
     if(d.nextSubId)      nextSubId      = d.nextSubId;
-  }catch(e){ console.warn('Supabase load error', e); }
+  }catch(e){ console.warn('Supabase load error', e, 'token:', __sbToken().slice(0,20)); }
 }
 
 // Realtime — odśwież gdy inny użytkownik zapisze

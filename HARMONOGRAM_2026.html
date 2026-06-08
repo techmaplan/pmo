@@ -2517,8 +2517,11 @@ document.addEventListener('DOMContentLoaded', async function(){
   // Włącz autozapis po załadowaniu stanu
   setTimeout(() => { window._autosaveReady = true; }, 1000);
   // Uruchom presence
-  const __syncId = (document.getElementById('project-number')?.value || document.getElementById('project-title')?.value || 'default').replace(/\s+/g,'_');
-  __startPresence(__syncId);
+  const __syncId = new URLSearchParams(window.location.search).get('syncId')
+    || document.getElementById('project-number')?.value
+    || document.getElementById('project-title')?.value
+    || 'default';
+  __startPresence(__syncId.replace(/\s+/g,'_'));
 });
 document.addEventListener('DOMContentLoaded', function(){
   // Wczytaj nazwę i numer projektu z parametrów URL (nowy projekt z panelu)
@@ -5788,7 +5791,8 @@ function scheduleAutosave() {
 }
 
 
-// ── Presence ─────────────────────────────────────────────────────────────────
+
+// ── Presence (polling) ───────────────────────────────────────────────────────
 const __PRESENCE_COLORS = ['#e74c3c','#3498db','#2ecc71','#f39c12','#9b59b6','#1abc9c','#e67e22','#e91e63'];
 function __presenceColor(email) {
   let h = 0; for (let i = 0; i < email.length; i++) h = (h * 31 + email.charCodeAt(i)) & 0xffffffff;
@@ -5801,87 +5805,75 @@ function __presenceInitials(email) {
   return name.slice(0, 2).toUpperCase();
 }
 
-let __presenceUsers = {};
+let __myPresenceId = null;
+let __myEmail = null;
 
-function __startPresence(syncId) {
+async function __startPresence(location) {
   const token = __sbToken();
-  if (!token || token === __SB_KEY) return; // niezalogowany
-  // Odczytaj email z tokenu JWT
-  let email = '';
-  try { email = JSON.parse(atob(token.split('.')[1])).email || ''; } catch(e) { return; }
-  if (!email) return;
+  if (!token || token === __SB_KEY) return;
+  try { __myEmail = JSON.parse(atob(token.split('.')[1])).email || ''; } catch(e) { return; }
+  if (!__myEmail) return;
 
-  const channel = `presence:harmonogram:${syncId}`;
-  const ws = new WebSocket(`${__SB_URL.replace('https','wss')}/realtime/v1/websocket?apikey=${__SB_KEY}&vsn=1.0.0`);
+  __myPresenceId = __myEmail.replace(/[^a-z0-9]/gi,'_') + '_' + location.replace(/[^a-z0-9]/gi,'_');
 
-  ws.onopen = () => {
-    ws.send(JSON.stringify({ topic: `realtime:${channel}`, event: 'phx_join', payload: { config: { presence: { key: email } } }, ref: 'p1' }));
-    ws.send(JSON.stringify({ topic: `realtime:${channel}`, event: 'presence', payload: { type: 'track', payload: { email, online_at: new Date().toISOString() } }, ref: 'p2' }));
-    __renderPresenceBar(email);
-  };
-
-  ws.onmessage = e => {
+  async function heartbeat() {
     try {
-      const msg = JSON.parse(e.data);
-      if (msg.event === 'presence_state' || msg.event === 'presence_diff') {
-        if (msg.payload?.joins) Object.entries(msg.payload.joins).forEach(([k,v]) => { if(v.metas?.[0]) __presenceUsers[k] = v.metas[0]; });
-        if (msg.payload?.leaves) Object.keys(msg.payload.leaves).forEach(k => delete __presenceUsers[k]);
-        __renderPresenceBar(email);
-      }
+      await fetch(`${__SB_URL}/rest/v1/presence`, {
+        method: 'POST',
+        headers: { 'apikey': __SB_KEY, 'Authorization': `Bearer ${__sbToken()}`,
+          'Content-Type': 'application/json', 'Prefer': 'resolution=merge-duplicates' },
+        body: JSON.stringify({ id: __myPresenceId, email: __myEmail, location, updated_at: new Date().toISOString() })
+      });
     } catch(e) {}
-  };
+  }
 
-  ws.onclose = () => setTimeout(() => __startPresence(syncId), 5000);
-  setInterval(() => { if(ws.readyState===1) ws.send(JSON.stringify({topic:'phoenix',event:'heartbeat',payload:{},ref:'hb'})); }, 30000);
+  async function cleanup() {
+    try {
+      await fetch(`${__SB_URL}/rest/v1/presence?id=eq.${encodeURIComponent(__myPresenceId)}`, {
+        method: 'DELETE',
+        headers: { 'apikey': __SB_KEY, 'Authorization': `Bearer ${__sbToken()}` }
+      });
+    } catch(e) {}
+  }
+
+  async function poll() {
+    try {
+      // Usuń nieaktywnych (ponad 30 sek bez heartbeat)
+      const cutoff = new Date(Date.now() - 30000).toISOString();
+      await fetch(`${__SB_URL}/rest/v1/presence?location=eq.${encodeURIComponent(location)}&updated_at=lt.${cutoff}`, {
+        method: 'DELETE',
+        headers: { 'apikey': __SB_KEY, 'Authorization': `Bearer ${__sbToken()}` }
+      });
+      // Pobierz aktywnych
+      const res = await fetch(`${__SB_URL}/rest/v1/presence?location=eq.${encodeURIComponent(location)}&select=email,updated_at`, {
+        headers: { 'apikey': __SB_KEY, 'Authorization': `Bearer ${__sbToken()}` }
+      });
+      if (!res.ok) return;
+      const rows = await res.json();
+      const others = rows.filter(r => r.email !== __myEmail).map(r => r.email);
+      __renderPresenceBar(others);
+    } catch(e) {}
+  }
+
+  // Wyślij heartbeat co 15 sek
+  heartbeat();
+  setInterval(heartbeat, 15000);
+  // Poll co 10 sek
+  poll();
+  setInterval(poll, 10000);
+  // Usuń przy zamknięciu
+  window.addEventListener('beforeunload', cleanup);
 }
 
-function __renderPresenceBar(myEmail) {
+function __renderPresenceBar(others) {
   const bar = document.getElementById('__presence_bar__');
   if (!bar) return;
-  const others = Object.keys(__presenceUsers).filter(e => e !== myEmail);
   if (!others.length) { bar.innerHTML = ''; return; }
   const avatars = others.map((email, i) =>
     `<div title="${email}" style="width:30px;height:30px;border-radius:50%;background:${__presenceColor(email)};display:flex;align-items:center;justify-content:center;font-family:Barlow,sans-serif;font-size:11px;font-weight:700;color:#fff;cursor:default;border:2px solid rgba(255,255,255,.25);margin-right:${i < others.length-1 ? '-6px' : '0'};z-index:${others.length-i};position:relative">${__presenceInitials(email)}</div>`
   ).join('');
   bar.innerHTML = '<span style="font-size:9px;font-weight:700;color:rgba(255,255,255,.4);letter-spacing:.08em;text-transform:uppercase;margin-right:8px">Online:</span>'
     + '<div style="display:flex;align-items:center">' + avatars + '</div>';
-}
-
-
-// Wczytaj stan z Supabase przy otwarciu
-async function __loadStateFromSupabase(){
-  const urlSyncId=new URLSearchParams(window.location.search).get('syncId')||sessionStorage.getItem('sb_syncId')||'';
-  const pm_num=document.getElementById('project-number')?.value||'';
-  const pm_title=document.getElementById('project-title')?.value||'';
-  const syncId=urlSyncId||pm_num||pm_title.replace(/\s+/g,'_');
-  if(!syncId) return;
-  try{
-    const res=await fetch(`${__SB_URL}/rest/v1/harmonogramy?sync_id=eq.${encodeURIComponent(syncId)}&limit=1`,{
-      headers:{'apikey':__SB_KEY,'Authorization':`Bearer ${__sbToken()}`}
-    });
-    if(!res.ok) return;
-    const rows=await res.json();
-    if(!rows[0]||!rows[0].html) return;
-    let d;
-    try{ d=JSON.parse(rows[0].html); }catch(e){ return; } // stary format HTML - pomiń
-    if(!d||!d.tasks) return;
-    // Przywróć stan
-    if(d.tasks)            tasks=d.tasks;
-    if(d.ustalenia)        ustalenia=d.ustalenia;
-    if(d.calAlerts)        calAlerts=d.calAlerts;
-    if(d.cols)             cols=d.cols;
-    if(d.view)             view=d.view;
-    if(d.viewStart)        viewStart=new Date(d.viewStart);
-    if(d.cbExpanded)       cbExpanded=d.cbExpanded;
-    if(d.expanded)         expanded=d.expanded;
-    if(d.nextId)           nextId=d.nextId;
-    if(d.phaseSummaryConfig) phaseSummaryConfig=d.phaseSummaryConfig;
-    if(d._psExpanded!==undefined) _psExpanded=d._psExpanded;
-    if(d.projectTitle){const t=document.getElementById('project-title');if(t&&!t.value)t.value=d.projectTitle;}
-    if(d.projectNum){const n=document.getElementById('project-number');if(n&&!n.value)n.value=d.projectNum;}
-    render();
-    console.log('Stan wczytany z Supabase dla syncId:',syncId);
-  }catch(e){console.warn('Błąd wczytywania stanu:',e);}
 }
 
 function toggleToolbar(){

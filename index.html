@@ -768,75 +768,60 @@ function presenceInitials(email) {
   return name.slice(0, 2).toUpperCase();
 }
 
-let _presenceChannel = null;
-let _presenceUsers = {};
+let _myPresenceId = null;
 
 function startPresence(location) {
   if (!_authUser) return;
   const email = _authUser.email;
-  const channel = `presence:${location}`;
+  _myPresenceId = email.replace(/[^a-z0-9]/gi,'_') + '_' + location;
 
-  _presenceChannel = new WebSocket(
-    `${SB_URL.replace('https','wss')}/realtime/v1/websocket?apikey=${SB_KEY}&vsn=1.0.0`
-  );
-
-  _presenceChannel.onopen = () => {
-    // Join presence channel
-    _presenceChannel.send(JSON.stringify({
-      topic: `realtime:${channel}`, event: 'phx_join',
-      payload: { config: { presence: { key: email } } }, ref: 'p1'
-    }));
-    // Broadcast own presence
-    _presenceChannel.send(JSON.stringify({
-      topic: `realtime:${channel}`, event: 'presence',
-      payload: { type: 'track', payload: { email, location, online_at: new Date().toISOString() } },
-      ref: 'p2'
-    }));
-  };
-
-  _presenceChannel.onmessage = e => {
+  async function heartbeat() {
     try {
-      const msg = JSON.parse(e.data);
-      if (msg.event === 'presence_state' || msg.event === 'presence_diff') {
-        // Rebuild users list from joins/leaves
-        if (msg.payload?.joins) {
-          Object.entries(msg.payload.joins).forEach(([key, val]) => {
-            const metas = val.metas || [];
-            if (metas.length) _presenceUsers[key] = metas[0];
-          });
-        }
-        if (msg.payload?.leaves) {
-          Object.keys(msg.payload.leaves).forEach(key => delete _presenceUsers[key]);
-        }
-        renderPresence();
-      }
+      await fetch(`${SB_URL}/rest/v1/presence`, {
+        method: 'POST',
+        headers: { ...sbHeaders(), 'Prefer': 'resolution=merge-duplicates' },
+        body: JSON.stringify({ id: _myPresenceId, email, location, updated_at: new Date().toISOString() })
+      });
     } catch(e) {}
-  };
+  }
 
-  _presenceChannel.onclose = () => setTimeout(() => startPresence(location), 5000);
+  async function poll() {
+    try {
+      const cutoff = new Date(Date.now() - 30000).toISOString();
+      await fetch(`${SB_URL}/rest/v1/presence?location=eq.${encodeURIComponent(location)}&updated_at=lt.${encodeURIComponent(cutoff)}`, {
+        method: 'DELETE', headers: sbHeaders()
+      });
+      const res = await fetch(`${SB_URL}/rest/v1/presence?location=eq.${encodeURIComponent(location)}&select=email`, {
+        headers: sbHeaders()
+      });
+      if (!res.ok) return;
+      const rows = await res.json();
+      const others = rows.filter(r => r.email !== email).map(r => r.email);
+      renderPresence(others);
+    } catch(e) {}
+  }
 
-  // Heartbeat
-  setInterval(() => {
-    if (_presenceChannel?.readyState === 1) {
-      _presenceChannel.send(JSON.stringify({ topic: 'phoenix', event: 'heartbeat', payload: {}, ref: 'hb' }));
-    }
-  }, 30000);
+  heartbeat();
+  setInterval(heartbeat, 15000);
+  poll();
+  setInterval(poll, 10000);
+  window.addEventListener('beforeunload', () => {
+    fetch(`${SB_URL}/rest/v1/presence?id=eq.${encodeURIComponent(_myPresenceId)}`, {
+      method: 'DELETE', headers: sbHeaders(), keepalive: true
+    });
+  });
 }
 
-function renderPresence() {
+function renderPresence(others) {
   const bar = document.getElementById('presence-bar');
   if (!bar) return;
-  const myEmail = _authUser?.email;
-  const others = Object.entries(_presenceUsers)
-    .filter(([email]) => email !== myEmail);
-
-  if (!others.length) { bar.innerHTML = ''; return; }
-
-  bar.innerHTML = others.map(([email]) => `
-    <div title="${email}" style="width:26px;height:26px;border-radius:50%;background:${presenceColor(email)};
+  if (!others || !others.length) { bar.innerHTML = ''; return; }
+  bar.innerHTML = others.map((email, i) => `
+    <div title="${email}" style="width:28px;height:28px;border-radius:50%;background:${presenceColor(email)};
       display:flex;align-items:center;justify-content:center;font-family:'Barlow',sans-serif;
-      font-size:10px;font-weight:700;color:#fff;letter-spacing:.02em;cursor:default;
-      border:2px solid rgba(255,255,255,.3)">${presenceInitials(email)}</div>
+      font-size:10px;font-weight:700;color:#fff;cursor:default;
+      border:2px solid rgba(255,255,255,.25);margin-right:${i < others.length-1 ? '-6px' : '0'};
+      z-index:${others.length-i};position:relative">${presenceInitials(email)}</div>
   `).join('');
 }
 
