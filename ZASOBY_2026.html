@@ -62,7 +62,7 @@ function hideDateTip(){}
         <button onclick="addSubcontractor()" style="background:#ffffff;color:#2d2b29;border:none;border-radius:5px;padding:5px 11px;font-size:11px;font-weight:700;font-family:Barlow,sans-serif;cursor:pointer;box-shadow:0 1px 3px rgba(0,0,0,.15)">＋ Podwykonawca</button>
         <button onclick="openAbsenceForSelectedEmp()" style="background:#ffffff;color:#2d2b29;border:none;border-radius:5px;padding:5px 11px;font-size:11px;font-weight:700;font-family:Barlow,sans-serif;cursor:pointer;box-shadow:0 1px 3px rgba(0,0,0,.15)">⏸ Urlopy</button>
         <button onclick="renderWorkload()" title="Odśwież" style="background:#ffffff;color:#2d2b29;border:none;border-radius:5px;padding:5px 11px;font-size:11px;font-weight:700;font-family:Barlow,sans-serif;cursor:pointer;box-shadow:0 1px 3px rgba(0,0,0,.15)">Odśwież</button>
-        <button onclick="saveZasoby()" title="Zapisz zmiany" style="background:#ffffff;color:#2d2b29;border:none;border-radius:5px;padding:5px 11px;font-size:11px;font-weight:700;font-family:Barlow,sans-serif;cursor:pointer;box-shadow:0 1px 3px rgba(0,0,0,.15)">💾 Zapisz</button>
+
         <button onclick="clearAllBars()" title="Wyczyść wszystkie paski" style="background:#ffffff;color:#2d2b29;border:none;border-radius:5px;padding:5px 10px;font-size:11px;font-weight:700;font-family:Barlow,sans-serif;cursor:pointer;box-shadow:0 1px 3px rgba(0,0,0,.15)">🗑</button>
       </div>
       <div class="gantt-frame">
@@ -2873,6 +2873,13 @@ async function __sbGet(table, id) {
   const rows = await res.json();
   return rows[0] || null;
 }
+// Autozapis do Supabase po każdej zmianie (debounce 2s)
+let __autosaveTimer = null;
+function scheduleAutosave(){
+  if(__autosaveTimer) clearTimeout(__autosaveTimer);
+  __autosaveTimer = setTimeout(()=>{ saveZasoby(); __autosaveTimer=null; }, 2000);
+}
+
 function saveToStorage(){
 try{
 const embedEl = document.getElementById('__embedded_data__');
@@ -3060,7 +3067,7 @@ const ids = absences.filter(x=>x.type===a.type&&x.start===a.start&&x.end===a.end
 pushUndo();
 absences.forEach(x=>{ if(ids.includes(x.id)) x.type = newType; });
 closeAbsencePopup();
-saveToStorage();
+saveToStorage(); scheduleAutosave();
 renderWorkload();
 const typeName = ABSENCE_TYPES[newType]?.name || newType;
 toast(`Zmieniono ${ids.length} propozycji na: ${typeName}`);
@@ -3159,7 +3166,7 @@ absences.push({id: nextAbsenceId++, empId, type, start, end, note});
 });
 _absenceCopyData = null;
 closeAbsencePopup();
-saveToStorage();
+saveToStorage(); scheduleAutosave();
 renderWorkload();
 toast(`Skopiowano nieobecność dla ${checked.length} pracowników`);
 }
@@ -3269,7 +3276,7 @@ if(!hasOverlap) absences.push({id: nextAbsenceId++, empId, type, start, end, not
 const addedExtra = absences.length - beforeCount;
 const skippedCount = extraEmpIds.length - addedExtra;
 closeAbsencePopup();
-saveToStorage();
+saveToStorage(); scheduleAutosave();
 renderWorkload();
 const total = (_editingAbsenceId==null?1:0) + addedExtra;
 toast(extraEmpIds.length>0 ? `Zapisano dla ${total} pracowników${skippedCount>0?' · pominięto '+skippedCount+' (zajęte)':''}` : 'Zapisano nieobecność');
@@ -3316,7 +3323,7 @@ function confirmDeleteAbsence(id){
 pushUndo();
 absences = absences.filter(a=>a.id!==id);
 closeAbsencePopup();
-saveToStorage();
+saveToStorage(); scheduleAutosave();
 renderWorkload();
 toast('Usunięto nieobecność');
 }
@@ -3328,7 +3335,7 @@ const ids = absences.filter(x=>x.type===a.type&&x.start===a.start&&x.end===a.end
 pushUndo();
 absences = absences.filter(x=>!ids.includes(x.id));
 closeAbsencePopup();
-saveToStorage();
+saveToStorage(); scheduleAutosave();
 renderWorkload();
 toast(`Usunięto nieobecność dla ${ids.length} pracowników`);
 }
@@ -3429,7 +3436,7 @@ milestones: (cb.milestones||[]).map(m=>({...m}))
 
 delete newBar.stationIdx;
 manualBars.push(newBar);
-saveToStorage();
+saveToStorage(); scheduleAutosave();
 renderWorkload();
 closePastePopup();
 const emp = employees.find(e=>e.id===empId);
@@ -3450,7 +3457,7 @@ milestones: (cb.milestones||[]).map(m=>({...m}))
 };
 delete newBar.empId;
 stationBars.push(newBar);
-saveToStorage();
+saveToStorage(); scheduleAutosave();
 renderWorkload();
 closePastePopup();
 toast('Wklejono do stanowiska: ' + (stations[stIdx]||'?'));
@@ -3652,7 +3659,7 @@ pushUndo();
 const id = nextSubId++;
 const autoName = 'Podwykonawca ' + (subcontractors.length + 1);
 subcontractors.push({id, name: autoName});
-saveToStorage();
+saveToStorage(); scheduleAutosave();
 renderWorkload();
 toast('Dodano: '+autoName);
 }
@@ -3698,7 +3705,7 @@ if(!trimmed){ renderWorkload(); return; }
 if(trimmed === sub.name){ renderWorkload(); return; }
 pushUndo();
 sub.name = trimmed;
-saveToStorage();
+saveToStorage(); scheduleAutosave();
 renderWorkload();
 }
 
@@ -3717,7 +3724,7 @@ employees = employees.filter(e=>!workerIds.includes(e.id));
 manualBars = manualBars.filter(b=>!workerIds.includes(b.empId));
 subcontractors = subcontractors.filter(s=>s.id!==id);
 delete subCollapsed[id];
-saveToStorage();
+saveToStorage(); scheduleAutosave();
 renderWorkload();
 toast('Usunięto podwykonawcę');
 }
@@ -3743,7 +3750,7 @@ status: 'active',
 notes: ''
 });
 subCollapsed[subId] = false;
-saveToStorage();
+saveToStorage(); scheduleAutosave();
 renderWorkload();
 }
 
@@ -3778,7 +3785,7 @@ const trimmed = (value||'').trim();
 const parts = trimmed.split(/\s+/);
 e.firstName = parts[0] || '';
 e.lastName = parts.slice(1).join(' ') || '';
-saveToStorage();
+saveToStorage(); scheduleAutosave();
 renderWorkload();
 }
 
@@ -3818,7 +3825,7 @@ function _doDeleteSubWorker(empId){
 pushUndo();
 employees = employees.filter(x=>x.id!==empId);
 manualBars = manualBars.filter(b=>b.empId!==empId);
-saveToStorage();
+saveToStorage(); scheduleAutosave();
 renderWorkload();
 toast('Usunięto pracownika');
 }
@@ -3859,7 +3866,7 @@ nextStationBarId = 1;
 nextAbsenceId = 1;
 const dlg = document.getElementById('clear-bars-confirm');
 if(dlg) dlg.remove();
-saveToStorage();
+saveToStorage(); scheduleAutosave();
 renderWorkload();
 toast('Wyczyszczono wszystkie paski i urlopy');
 }
@@ -3869,7 +3876,7 @@ if(!undoHistory.length){ toast('Brak operacji do cofnięcia', true); return; }
 redoHistory.push(_snapshot());
 if(redoHistory.length > 50) redoHistory.shift();
 _restore(undoHistory.pop());
-saveToStorage();
+saveToStorage(); scheduleAutosave();
 renderWorkload();
 
 if(typeof renderSummaryPanel==='function') try{renderSummaryPanel()}catch(e){}
@@ -3882,7 +3889,7 @@ if(!redoHistory.length){ toast('Brak operacji do powtórzenia', true); return; }
 undoHistory.push(_snapshot());
 if(undoHistory.length > 50) undoHistory.shift();
 _restore(redoHistory.pop());
-saveToStorage();
+saveToStorage(); scheduleAutosave();
 renderWorkload();
 if(typeof renderSummaryPanel==='function') try{renderSummaryPanel()}catch(e){}
 if(typeof renderPeople==='function') try{renderPeople()}catch(e){}
@@ -3979,7 +3986,7 @@ employees.push({id: nextEmpId++, ...data});
 toast('Dodano pracownika');
 }
 closeModal('modal-emp');
-saveToStorage();
+saveToStorage(); scheduleAutosave();
 renderEmployees();
 if(currentTab==='people') renderPeople();
 renderWorkload();
@@ -3996,7 +4003,7 @@ assignments[tid] = (assignments[tid]||[]).filter(eid=>eid!==editingEmpId);
 if(assignments[tid].length===0) delete assignments[tid];
 });
 closeModal('modal-emp');
-saveToStorage();
+saveToStorage(); scheduleAutosave();
 renderEmployees();
 toast('Pracownik usunięty');
 }
@@ -4011,7 +4018,7 @@ Object.keys(assignments).forEach(tid=>{
 assignments[tid] = (assignments[tid]||[]).filter(eid=>eid!==empId);
 if(assignments[tid].length===0) delete assignments[tid];
 });
-saveToStorage();
+saveToStorage(); scheduleAutosave();
 renderEmployees();
 toast('Pracownik usunięty');
 }
@@ -4268,7 +4275,7 @@ closeModal('modal-assign');
 const emp = employees.find(e=>e.id===selectedCandidateId);
 const task = tasks.find(t=>t.id===assigningTaskId);
 toast(`Przypisano: ${fullName(emp)} → ${task.name}`);
-saveToStorage();
+saveToStorage(); scheduleAutosave();
 renderTasks();
 }
 
@@ -4276,7 +4283,7 @@ function unassign(taskId, empId){
 if(!assignments[taskId]) return;
 assignments[taskId] = assignments[taskId].filter(id=>id!==empId);
 if(assignments[taskId].length===0) delete assignments[taskId];
-saveToStorage();
+saveToStorage(); scheduleAutosave();
 renderTasks();
 toast('Usunięto przypisanie');
 }
@@ -5072,12 +5079,12 @@ let newId;
 if(isStation){
 newId = nextStationBarId++;
 stationBars.push({id:newId, stationIdx:stIdx, project:'?', mech:'', taskName:'', start:startStr, end:endStr, color:BAR_COLORS[0], note:'', hoursPerDay:8, isObiekt:false, milestones:[]});
-saveToStorage(); renderWorkload();
+saveToStorage(); scheduleAutosave(); renderWorkload();
 setTimeout(()=>{ const el=document.getElementById('stbar-'+newId); if(el) openStationBarPopup(el,stIdx,newId); },30);
 } else {
 newId = nextBarId++;
 manualBars.push({id:newId, empId, project:'?', mech:'', taskName:'', start:startStr, end:endStr, color:BAR_COLORS[0], note:'', hoursPerDay:8, isObiekt:false, milestones:[]});
-saveToStorage(); renderWorkload();
+saveToStorage(); scheduleAutosave(); renderWorkload();
 setTimeout(()=>{ const el=document.getElementById('mbar-'+newId); if(el) openInlinePopup(el,empId,null,null,newId,startStr,endStr); },30);
 }
 }
@@ -5108,7 +5115,7 @@ if(start > end){ toast('Data końca musi być po dacie początku', true); return
 pushUndo();
 const newId = nextAbsenceId++;
 absences.push({id:newId, empId, type, start, end, note});
-saveToStorage(); renderWorkload();
+saveToStorage(); scheduleAutosave(); renderWorkload();
 closeInlinePopup(false);
 toast('Urlop zapisany');
 }
@@ -5121,10 +5128,10 @@ if(discardIfEmpty && editingBarId != null){
 if(typeof editingBarId === 'string' && editingBarId.startsWith('st-')){
 const stId = parseInt(editingBarId.slice(3));
 const b = stationBars.find(x=>x.id===stId);
-if(b && b.project==='?'){ stationBars=stationBars.filter(x=>x.id!==stId); saveToStorage(); renderWorkload(); }
+if(b && b.project==='?'){ stationBars=stationBars.filter(x=>x.id!==stId); saveToStorage(); scheduleAutosave(); renderWorkload(); }
 } else {
 const b = manualBars.find(x=>x.id===editingBarId);
-if(b && b.project === '?'){ manualBars=manualBars.filter(x=>x.id!==editingBarId); saveToStorage(); renderWorkload(); }
+if(b && b.project === '?'){ manualBars=manualBars.filter(x=>x.id!==editingBarId); saveToStorage(); scheduleAutosave(); renderWorkload(); }
 }
 }
 editingBarId = null;
@@ -5427,7 +5434,7 @@ manualBars.forEach(b=>{ if(b.project===project && !b.isObiekt) b.color = finalCo
 }
 document.removeEventListener('mousedown', _inlineOutsideClick);
 closeInlinePopup();
-saveToStorage();
+saveToStorage(); scheduleAutosave();
 renderWorkload();
 refreshTasksView();
 }
@@ -5468,7 +5475,7 @@ stationBars = stationBars.filter(b=>b.id!==stId);
 } else {
 manualBars = manualBars.filter(b=>b.id!==idToDelete);
 }
-saveToStorage();
+saveToStorage(); scheduleAutosave();
 saveZasoby();
 renderWorkload();
 refreshTasksView();
@@ -5712,7 +5719,7 @@ bar.empId = _dragTargetEmpId;
 }
 }
 
-saveToStorage();
+saveToStorage(); scheduleAutosave();
 renderWorkload();
 refreshTasksView();
 _draggingBarId = null;
@@ -5787,7 +5794,7 @@ document.removeEventListener('mouseup', _onResizeUp);
 document.body.style.cursor = '';
 document.body.style.userSelect = '';
 
-saveToStorage();
+saveToStorage(); scheduleAutosave();
 renderWorkload();
 refreshTasksView();
 _resizingBarId = null;
@@ -6120,7 +6127,7 @@ function addStation(){
 pushUndo();
 stations.push('Wpisz nazwę');
 planningCollapsed = false;
-saveToStorage();
+saveToStorage(); scheduleAutosave();
 renderWorkload();
 }
 
@@ -6152,7 +6159,7 @@ function _commitStationName(idx, value){
 const trimmed = (value||'').trim();
 pushUndo();
 stations[idx] = trimmed || 'Wpisz nazwę';
-saveToStorage();
+saveToStorage(); scheduleAutosave();
 renderWorkload();
 }
 
@@ -6243,7 +6250,7 @@ if(discardIfEmpty && _stationPopupBarId != null){
 const b = stationBars.find(x=>x.id===_stationPopupBarId);
 if(b && b.project==='?'){
 stationBars = stationBars.filter(x=>x.id!==_stationPopupBarId);
-saveToStorage(); renderWorkload();
+saveToStorage(); scheduleAutosave(); renderWorkload();
 }
 }
 editingBarId = null;
@@ -6269,7 +6276,7 @@ const idx = stationBars.findIndex(b=>b.id===_stationPopupBarId);
 if(idx>=0) stationBars[idx] = {...stationBars[idx], project, mech, taskName, start, end, color:finalColor, hoursPerDay, milestones};
 document.removeEventListener('mousedown', _inlineOutsideClick);
 closeStationPopup();
-saveToStorage(); renderWorkload(); refreshTasksView();
+saveToStorage(); scheduleAutosave(); renderWorkload(); refreshTasksView();
 }
 
 function deleteStationBar(){
@@ -6303,7 +6310,7 @@ if(el){ const row=el.closest('[data-start]'); if(row){const sd=new Date(row.data
 function _stOnDragUp(){
 document.removeEventListener('mousemove',_stOnDragMove); document.removeEventListener('mouseup',_stOnDragUp);
 document.body.style.cursor=''; document.body.style.userSelect='';
-saveToStorage(); renderWorkload(); _stDraggingId=null; setTimeout(()=>_didDrag=false,50);
+saveToStorage(); scheduleAutosave(); renderWorkload(); _stDraggingId=null; setTimeout(()=>_didDrag=false,50);
 }
 function startStationBarResize(event, barId, dayW){
 pushUndo(); _stResizingId=barId; _stDayW=dayW; _resizeStartX=event.clientX;
@@ -6340,7 +6347,7 @@ if(el){const row=el.closest('[data-start]');if(row){const sd=new Date(row.datase
 function _stOnResizeUp(){
 document.removeEventListener('mousemove',_stOnResizeMove); document.removeEventListener('mouseup',_stOnResizeUp);
 document.body.style.cursor=''; document.body.style.userSelect='';
-saveToStorage(); renderWorkload(); _stResizingId=null;
+saveToStorage(); scheduleAutosave(); renderWorkload(); _stResizingId=null;
 }
 
 function deleteStation(idx){
@@ -6379,7 +6386,7 @@ stations.splice(idx, 1);
 stationBars = stationBars
 .filter(b => b.stationIdx !== idx)
 .map(b => b.stationIdx > idx ? {...b, stationIdx: b.stationIdx - 1} : b);
-saveToStorage();
+saveToStorage(); scheduleAutosave();
 renderWorkload();
 toast('Usunięto pozycję');
 }
@@ -6418,7 +6425,7 @@ const before = manualBars.length;
 manualBars = manualBars.filter(b => getTaskStatus(b) !== 'completed');
 const removed = before - manualBars.length;
 if(removed === 0){ toast('Brak zakończonych zadań'); return; }
-saveToStorage();
+saveToStorage(); scheduleAutosave();
 renderWorkload();
 renderTasksList();
 toast(`Usunięto ${removed} zakończonych zadań`);
@@ -6782,7 +6789,7 @@ parsedTasks = Function('"use strict"; return ' + m[1].replace(/;$/,''))();
 }
 if(!Array.isArray(parsedTasks)) throw new Error('Nie znaleziono tablicy zadań');
 tasks = parsedTasks;
-saveToStorage();
+saveToStorage(); scheduleAutosave();
 renderTasks();
 toast(`Wczytano ${tasks.length} pozycji harmonogramu`);
 }catch(err){
@@ -6849,7 +6856,7 @@ employees.push({id: nextEmpId++, status:'active', maxHours:40, notes:'', email:'
 });
 }
 assignments = {};
-saveToStorage();
+saveToStorage(); scheduleAutosave();
 renderEmployees();
 renderTasks();
 toast('Załadowano przykładowy harmonogram (3 mechanizmy, ' + tasks.filter(t=>!t._isMechSection).length + ' zadań) i ' + employees.length + ' pracowników');
@@ -6917,7 +6924,7 @@ notes: '',
 });
 });
 
-saveToStorage();
+saveToStorage(); scheduleAutosave();
 if(!silent){
 renderEmployees();
 toast(`Dodano ${toAdd.length} pracowników zespołu Techma${skipped>0?` (${skipped} pominiętych — już istniało)`:''}`);
@@ -6992,7 +6999,7 @@ const domBars = document.querySelectorAll('.gantt-bar-manual[id^="mbar-"]').leng
 const domAbs = document.querySelectorAll('.gantt-absence-bar[id^="abar-"]').length;
 if(domBars > manualBars.length || domAbs > absences.length){
 const n = reconstructFromDOM();
-if(n>0) saveToStorage();
+if(n>0) saveToStorage(); scheduleAutosave();
 }
 if(employees.length === 0){
 loadTechmaTeam(true);
@@ -7137,7 +7144,7 @@ const dateStr = d.getFullYear() + '-'
 const fileName = 'ZASOBY_' + dateStr + '.html';
 
 // Najpierw zapisz aktualny stan do localStorage
-saveToStorage();
+saveToStorage(); scheduleAutosave();
 // Użyj dokładnie tych samych danych do osadzenia w pliku
 const snapshotData = {
   employees, tasks, assignments, nextEmpId, manualBars, nextBarId,
