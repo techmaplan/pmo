@@ -2512,8 +2512,8 @@ document.addEventListener('mousemove', function(e) {
 // Run after page load
 document.addEventListener('DOMContentLoaded', renderCalAlerts);
 document.addEventListener('DOMContentLoaded', async function(){
-  // Wczytaj stan z Supabase
-  await __loadStateFromSupabase();
+  // Wczytaj stan z Supabase (błąd nie blokuje reszty)
+  try { await __loadStateFromSupabase(); } catch(e) { console.warn('loadState error:', e); }
   // Włącz autozapis po załadowaniu stanu
   setTimeout(() => { window._autosaveReady = true; }, 1000);
   // Uruchom presence
@@ -5874,6 +5874,43 @@ function __renderPresenceBar(others) {
   ).join('');
   bar.innerHTML = '<span style="font-size:9px;font-weight:700;color:rgba(255,255,255,.4);letter-spacing:.08em;text-transform:uppercase;margin-right:8px">Online:</span>'
     + '<div style="display:flex;align-items:center">' + avatars + '</div>';
+}
+
+
+// Wczytaj stan z Supabase przy otwarciu
+async function __loadStateFromSupabase(){
+  const urlSyncId=new URLSearchParams(window.location.search).get('syncId')||sessionStorage.getItem('sb_syncId')||'';
+  const pm_num=document.getElementById('project-number')?.value||'';
+  const pm_title=document.getElementById('project-title')?.value||'';
+  const syncId=urlSyncId||pm_num||pm_title.replace(/\s+/g,'_');
+  if(!syncId) return;
+  try{
+    const _hdr={'apikey':__SB_KEY,'Authorization':'Bearer '+__sbToken()};
+    const res=await fetch(__SB_URL+'/rest/v1/harmonogramy?sync_id=eq.'+encodeURIComponent(syncId)+'&limit=1',{
+      headers:_hdr
+    });
+    if(!res.ok) return;
+    const rows=await res.json();
+    if(!rows[0]||!rows[0].html) return;
+    let d;
+    try{ d=JSON.parse(rows[0].html); }catch(e){ return; }
+    if(!d||!d.tasks) return;
+    if(d.tasks)            tasks=d.tasks;
+    if(d.ustalenia)        ustalenia=d.ustalenia;
+    if(d.calAlerts)        calAlerts=d.calAlerts;
+    if(d.cols)             cols=d.cols;
+    if(d.view)             view=d.view;
+    if(d.viewStart)        viewStart=new Date(d.viewStart);
+    if(d.cbExpanded)       cbExpanded=d.cbExpanded;
+    if(d.expanded)         expanded=d.expanded;
+    if(d.nextId)           nextId=d.nextId;
+    if(d.phaseSummaryConfig) phaseSummaryConfig=d.phaseSummaryConfig;
+    if(d._psExpanded!==undefined) _psExpanded=d._psExpanded;
+    if(d.projectTitle){const t=document.getElementById('project-title');if(t&&!t.value)t.value=d.projectTitle;}
+    if(d.projectNum){const n=document.getElementById('project-number');if(n&&!n.value)n.value=d.projectNum;}
+    render();
+    console.log('Stan wczytany dla syncId:',syncId);
+  }catch(e){console.warn('Blad wczytywania:',e);}
 }
 
 function toggleToolbar(){
