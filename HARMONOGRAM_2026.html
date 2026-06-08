@@ -728,7 +728,10 @@ thead th.dc{position:relative}
     </div>
     <span class="project-sub">Harmonogram Gantta</span>
   </div>
-  <svg width="120" height="36" viewBox="0 0 120 36" class="logo-img" xmlns="http://www.w3.org/2000/svg"><text x="0" y="26" font-family="Barlow Condensed,sans-serif" font-size="24" font-weight="700" fill="#fff" letter-spacing="2">TECHMA</text></svg>
+  <div style="display:flex;align-items:center;gap:12px;margin-left:auto">
+    <div id="__presence_bar__" style="display:flex;align-items:center;gap:4px"></div>
+    <svg width="120" height="36" viewBox="0 0 120 36" class="logo-img" xmlns="http://www.w3.org/2000/svg"><text x="0" y="26" font-family="Barlow Condensed,sans-serif" font-size="24" font-weight="700" fill="#fff" letter-spacing="2">TECHMA</text></svg>
+  </div>
 </header>
 <div class="page">
 <div id="toolbar-toggle-bar" style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
@@ -5833,18 +5836,12 @@ function __startPresence(syncId) {
 }
 
 function __renderPresenceBar(myEmail) {
-  let bar = document.getElementById('__presence_bar__');
-  if (!bar) {
-    bar = document.createElement('div');
-    bar.id = '__presence_bar__';
-    bar.style.cssText = 'display:flex;align-items:center;gap:4px;margin-left:8px';
-    const toggle = document.getElementById('toolbar-toggle-bar');
-    if (toggle) toggle.appendChild(bar);
-  }
+  const bar = document.getElementById('__presence_bar__');
+  if (!bar) return;
   const others = Object.keys(__presenceUsers).filter(e => e !== myEmail);
   if (!others.length) { bar.innerHTML = ''; return; }
-  bar.innerHTML = '<span style="font-size:9px;font-weight:700;color:#888;letter-spacing:.06em;text-transform:uppercase;margin-right:2px">Online:</span>'
-    + others.map(email => `<div title="${email}" style="width:24px;height:24px;border-radius:50%;background:${__presenceColor(email)};display:flex;align-items:center;justify-content:center;font-family:Barlow,sans-serif;font-size:9px;font-weight:700;color:#fff;cursor:default;border:2px solid #fff;box-shadow:0 1px 3px rgba(0,0,0,.2)">${__presenceInitials(email)}</div>`).join('');
+  bar.innerHTML = '<span style="font-size:9px;font-weight:700;color:rgba(255,255,255,.5);letter-spacing:.06em;text-transform:uppercase;margin-right:4px">Online:</span>'
+    + others.map(email => `<div title="${email}" style="width:28px;height:28px;border-radius:50%;background:${__presenceColor(email)};display:flex;align-items:center;justify-content:center;font-family:Barlow,sans-serif;font-size:10px;font-weight:700;color:#fff;cursor:default;border:2px solid rgba(255,255,255,.3);box-shadow:0 1px 4px rgba(0,0,0,.3)">${__presenceInitials(email)}</div>`).join('');
 }
 
 
@@ -5942,7 +5939,8 @@ async function saveHTML(){
       const row=rows.find(r=>r.data&&(r.data.syncId===syncId||r.data.num===pm_num));
       if(row){
         const updated={...row.data,name:pm_title,num:pm_num,syncId,
-          hasSchedule:true,start:payload.start||row.data.start,end:payload.end||row.data.end};
+          hasSchedule:true,start:payload.start||row.data.start,end:payload.end||row.data.end,
+          lastSynced:new Date().toISOString()};
         await __sbUpsert('projekty',{id:row.id,data:updated});
       }
     }
