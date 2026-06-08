@@ -5840,8 +5840,11 @@ function __renderPresenceBar(myEmail) {
   if (!bar) return;
   const others = Object.keys(__presenceUsers).filter(e => e !== myEmail);
   if (!others.length) { bar.innerHTML = ''; return; }
-  bar.innerHTML = '<span style="font-size:9px;font-weight:700;color:rgba(255,255,255,.5);letter-spacing:.06em;text-transform:uppercase;margin-right:4px">Online:</span>'
-    + others.map(email => `<div title="${email}" style="width:28px;height:28px;border-radius:50%;background:${__presenceColor(email)};display:flex;align-items:center;justify-content:center;font-family:Barlow,sans-serif;font-size:10px;font-weight:700;color:#fff;cursor:default;border:2px solid rgba(255,255,255,.3);box-shadow:0 1px 4px rgba(0,0,0,.3)">${__presenceInitials(email)}</div>`).join('');
+  const avatars = others.map((email, i) =>
+    `<div title="${email}" style="width:30px;height:30px;border-radius:50%;background:${__presenceColor(email)};display:flex;align-items:center;justify-content:center;font-family:Barlow,sans-serif;font-size:11px;font-weight:700;color:#fff;cursor:default;border:2px solid rgba(255,255,255,.25);margin-right:${i < others.length-1 ? '-6px' : '0'};z-index:${others.length-i};position:relative">${__presenceInitials(email)}</div>`
+  ).join('');
+  bar.innerHTML = '<span style="font-size:9px;font-weight:700;color:rgba(255,255,255,.4);letter-spacing:.08em;text-transform:uppercase;margin-right:8px">Online:</span>'
+    + '<div style="display:flex;align-items:center">' + avatars + '</div>';
 }
 
 
