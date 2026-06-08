@@ -4385,16 +4385,6 @@ if(todayCell){
   const offset = (todRect.left + todRect.width/2) - (wrapRect.left + wrapRect.width/2);
   ganttRight.scrollLeft = ganttRight.scrollLeft + offset;
   if(ganttHeadScroll) ganttHeadScroll.scrollLeft = ganttRight.scrollLeft;
-} else {
-const today = new Date();
-const startDate = _getGanttStartDate ? _getGanttStartDate() : null;
-if(startDate){
-const days = Math.round((today - startDate) / 86400000);
-const dayW = ganttZoom;
-const target = Math.max(0, days * dayW - ganttRight.clientWidth/2);
-ganttRight.scrollLeft = target;
-if(ganttHeadScroll) ganttHeadScroll.scrollLeft = target;
-}
 }
 }
 
@@ -5479,6 +5469,7 @@ stationBars = stationBars.filter(b=>b.id!==stId);
 manualBars = manualBars.filter(b=>b.id!==idToDelete);
 }
 saveToStorage();
+saveZasoby();
 renderWorkload();
 refreshTasksView();
 toast('Usunięto pasek');
