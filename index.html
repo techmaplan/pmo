@@ -338,7 +338,7 @@ async function sbDelete(table, id) {
 function sbHeaders() {
   return {
     'apikey': SB_KEY,
-    'Authorization': `Bearer ${SB_KEY}`,
+    'Authorization': `Bearer ${_authToken || SB_KEY}`,
     'Content-Type': 'application/json',
   };
 }
