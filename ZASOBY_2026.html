@@ -7020,11 +7020,11 @@ init();
 startZasobyRealtime();
 // Wczytaj dane z Supabase po załadowaniu DOM (token z URL jest wtedy dostępny)
 document.addEventListener('DOMContentLoaded', async function(){
-  await loadFromSupabase();
+  try { await loadFromSupabase(); } catch(e) { console.warn('load error:', e); }
   if(typeof render==='function') render();
   else if(typeof renderAll==='function') renderAll();
-  setTimeout(scrollToToday, 200);
-  setTimeout(__startPresence, 500);
+  if(typeof scrollToToday==='function') setTimeout(scrollToToday, 200);
+  if(typeof __startPresence==='function') setTimeout(__startPresence, 500);
 });
 
 
