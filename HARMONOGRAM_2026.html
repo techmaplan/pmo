@@ -5704,9 +5704,15 @@ function tmplSaveAsNew(){
 const __SB_URL = 'https://qggsljbngjtlkzahapch.supabase.co';
 const __SB_KEY = 'sb_publishable_WDcdhn0NY9IRrNFSlmldkA_kSI62e5p';
 function __sbToken(){
-  // Najpierw z URL (token przekazany z panelu)
-  const urlToken = new URLSearchParams(window.location.search).get('token');
-  if (urlToken) return urlToken;
+  // Najpierw z URL (token przekazany z panelu) — zapisz do sessionStorage od razu
+  const urlParams = new URLSearchParams(window.location.search);
+  const urlToken = urlParams.get('token');
+  if (urlToken) {
+    sessionStorage.setItem('sb_token', urlToken);
+    const urlRefresh = urlParams.get('refreshToken');
+    if (urlRefresh) sessionStorage.setItem('sb_refresh_token', urlRefresh);
+    return urlToken;
+  }
   // Fallback: sessionStorage
   return sessionStorage.getItem('sb_token') || __SB_KEY;
 }

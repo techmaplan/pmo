@@ -558,9 +558,10 @@ async function openSchedule(id) {
   const loc  = window.location.href.split('?')[0];
   const base = loc.endsWith('/') ? loc : loc.substring(0, loc.lastIndexOf('/') + 1);
   const token = _authToken || '';
+  const refreshToken = sessionStorage.getItem('sb_refresh_token') || '';
   showToast('Ładowanie…');
 
-  const params = new URLSearchParams({ token, syncId, name: p.name, num: p.num || syncId });
+  const params = new URLSearchParams({ token, refreshToken, syncId, name: p.name, num: p.num || syncId });
 
   // Projekt MCD ma własny plik
   if (p.scheduleUrl) {
