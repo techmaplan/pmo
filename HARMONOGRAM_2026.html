@@ -1630,7 +1630,7 @@ let tasks=[
 let cbExpanded={"3":true,"6":false,"7":true,"21":true,"158":true};
 let expanded={"1":true,"2":true,"3":true,"4":true,"5":true,"6":true,"7":true,"8":true,"9":true,"10":true,"11":true,"12":true,"13":true,"14":true,"15":true,"16":true,"17":true,"18":true,"19":true,"20":true,"21":true,"22":true,"23":true,"24":true,"25":true,"26":true,"27":true,"28":true,"29":true,"30":true,"31":true,"32":true,"33":true,"34":true,"35":true,"36":true,"37":true,"38":true,"39":true,"40":true,"41":true,"42":true,"43":true,"44":true,"45":true,"46":true,"47":true,"48":true,"49":true,"50":true,"51":true,"52":true,"53":true,"54":true,"55":true,"56":true,"57":true,"58":true,"59":true,"60":true,"71":true,"72":true,"73":true,"74":true,"75":true,"76":true,"77":true,"78":true,"79":true,"80":true,"81":true,"82":true,"83":true,"84":true,"85":true,"86":true,"87":true,"88":true,"89":true,"90":true,"91":true,"92":true,"93":true,"94":true,"95":true,"96":true,"97":true,"98":true,"99":true,"100":true,"101":true,"102":true,"103":true,"104":true,"105":true,"106":true,"107":true,"108":true,"109":true,"110":true,"111":true,"112":true,"113":true,"114":true,"115":true,"116":true,"117":true,"118":true,"119":true,"120":true,"121":true,"122":true,"123":true,"124":true,"125":true,"126":true,"127":true,"128":true,"129":true,"130":true,"131":true,"132":true,"133":true,"134":true,"135":true,"136":true,"137":true,"138":true,"139":true,"140":true,"141":true,"142":true,"143":true,"144":true,"145":true,"146":true,"147":true,"148":true,"149":true,"150":true,"151":true,"152":true,"153":true,"154":true,"155":true,"156":true,"157":true,"158":true,"160":true,"173":true,"177":true,"187":true,"195":true,"196":true,"197":true,"198":true,"199":true,"200":true,"201":true,"202":true,"203":true,"204":true,"205":true,"206":true,"208":true,"209":true,"210":true,"211":true,"212":true,"213":true,"214":true,"215":true,"216":true,"217":true,"218":true,"219":true,"221":true,"222":true,"223":true,"224":true,"225":true,"226":true,"227":true,"228":true,"229":true,"230":true,"231":true,"232":true};
 let editId=null,editParentId=null,nextId=233;
-let phaseSummaryConfig=[{"label":"Koncepcja","color":"#2a3a5c","taskNames":["Analiza projektu"]},{"label":"Projektowanie mechaniczne","color":"#3a6a2a","taskNames":["Projekt 3D","Dokumentacja 2D"]},{"label":"Produkcja mechaniczna","color":"#4a2a6a","taskNames":["Produkcja MPL (SPAWANIE)","Produkcja MPL (OBRÓBKA)"]},{"label":"Montaż mechaniczny obiekt","color":"#7a4a2a","taskNames":["Montaż OBIEKT"],"useIsObiekt":true},{"label":"Handlówka – ostatnia dostawa","color":"#7a5a2a","taskNames":["Handlówka"],"useHandlowkaLast":true}];
+let phaseSummaryConfig=[{"label":"Koncepcja","color":"#2a3a5c","taskNames":["Analiza projektu"]},{"label":"Projektowanie mechaniczne","color":"#3a6a2a","taskNames":["Projekt 3D","Dokumentacja 2D"]},{"label":"Produkcja mechaniczna","color":"#4a2a6a","taskNames":["Produkcja MPL (SPAWANIE)","Produkcja MPL (OBRÓBKA)"]},{"label":"Montaż mechaniczny MPL","color":"#2a6a7a","taskNames":["Montaż MPL"]},{"label":"Montaż mechaniczny obiekt","color":"#7a4a2a","taskNames":["Montaż OBIEKT"],"useIsObiekt":true},{"label":"Handlówka – ostatnia dostawa","color":"#7a5a2a","taskNames":["Handlówka"],"useHandlowkaLast":true}];
 let _psExpanded=false;
 // __STATE_END__
 
@@ -4015,6 +4015,7 @@ phaseSummaryConfig = [
   { label: 'Koncepcja',                  color: '#2a3a5c', taskNames: ['Analiza projektu'] },
   { label: 'Projektowanie mechaniczne',  color: '#3a6a2a', taskNames: ['Projekt 3D', 'Dokumentacja 2D'] },
   { label: 'Produkcja mechaniczna',      color: '#4a2a6a', taskNames: ['Produkcja MPL (SPAWANIE)', 'Produkcja MPL (OBRÓBKA)'] },
+  { label: 'Montaż mechaniczny MPL',     color: '#2a6a7a', taskNames: ['Montaż MPL'] },
   { label: 'Montaż mechaniczny obiekt',  color: '#7a4a2a', taskNames: ['Montaż OBIEKT'], useIsObiekt: true },
   { label: 'Handlówka – ostatnia dostawa', color: '#7a5a2a', taskNames: ['Handlówka'], useHandlowkaLast: true }
 ];
@@ -5709,8 +5710,27 @@ function __sbToken(){
   // Fallback: sessionStorage
   return sessionStorage.getItem('sb_token') || __SB_KEY;
 }
+async function __sbRefreshToken() {
+  const refreshToken = sessionStorage.getItem('sb_refresh_token');
+  if (!refreshToken) return false;
+  try {
+    const res = await fetch(`${__SB_URL}/auth/v1/token?grant_type=refresh_token`, {
+      method: 'POST',
+      headers: { 'apikey': __SB_KEY, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ refresh_token: refreshToken }),
+    });
+    if (!res.ok) return false;
+    const data = await res.json();
+    sessionStorage.setItem('sb_token', data.access_token);
+    if (data.refresh_token) sessionStorage.setItem('sb_refresh_token', data.refresh_token);
+    return true;
+  } catch(e) {
+    return false;
+  }
+}
+
 async function __sbUpsert(table, row) {
-  const res = await fetch(`${__SB_URL}/rest/v1/${table}`, {
+  const doRequest = () => fetch(`${__SB_URL}/rest/v1/${table}`, {
     method: 'POST',
     headers: {
       'apikey': __SB_KEY, 'Authorization': `Bearer ${__sbToken()}`,
@@ -5718,6 +5738,14 @@ async function __sbUpsert(table, row) {
     },
     body: JSON.stringify(row),
   });
+
+  let res = await doRequest();
+  if (res.status === 401) {
+    const refreshed = await __sbRefreshToken();
+    if (refreshed) {
+      res = await doRequest();
+    }
+  }
   if (!res.ok) {
     const err = await res.text();
     throw new Error(`Supabase ${table} error ${res.status}: ${err}`);
@@ -6277,16 +6305,67 @@ function taskCbToggle(tid,idx,checked){
   const tr=document.querySelector(`tr[data-rid="${tid}"]`);
   if(tr) tr.classList.toggle('task-all-done',allDone);
 }
+function taskCbRename(tid,idx,value){
+  const t=tasks.find(x=>x.id===tid);if(!t||!t.taskChecklist)return;
+  t.taskChecklist[idx].text=value;
+  setTimeout(()=>{render();_syncCbAutoNote();},0);
+}
 function taskCbRemove(tid,idx){
   const t=tasks.find(x=>x.id===tid);if(!t||!t.taskChecklist)return;
   _snapshot();
   t.taskChecklist.splice(idx,1);
   render();
+  _syncCbAutoNote();
 }
-function taskCbRename(tid,idx,value){
-  const t=tasks.find(x=>x.id===tid);if(!t||!t.taskChecklist)return;
-  t.taskChecklist[idx].text=value;
-  setTimeout(render, 0);
+// ── Auto-notatka z checkboxów zadań ──────────────────────────────────────────
+// Buduje/aktualizuje jedną notatkę w Ustaleniach z listą wszystkich checkboxów
+// pogrupowanych po zadaniach (w nagłówkach mechanizmów). Wywołaj po każdej
+// zmianie taskChecklist.
+function _syncCbAutoNote(){
+  const today=new Date();
+  const dd=String(today.getDate()).padStart(2,'0');
+  const mm=String(today.getMonth()+1).padStart(2,'0');
+  const yyyy=today.getFullYear();
+  const dateLabel=`${dd}.${mm}.${yyyy}`;
+  const dateISO=`${yyyy}-${mm}-${dd}`;
+  const noteId=`note_auto_${yyyy}${mm}${dd}`;
+
+  // Zbierz wszystkie checkboxy z zadań — zgrupowane po mechanizmach
+  let mechName=null;
+  const groups=[];   // [{mech, taskName, cbs:[text,...]}]
+
+  for(const t of tasks){
+    if(t._isMechSection){mechName=t.name;continue;}
+    if(!t.taskChecklist||t.taskChecklist.length===0)continue;
+    const nonEmpty=t.taskChecklist.filter(c=>c.text&&c.text.trim());
+    if(nonEmpty.length===0)continue;
+    groups.push({mech:mechName||null,taskName:t.name,cbs:nonEmpty.map(c=>c.text.trim())});
+  }
+
+  // Jeśli zero checkboxów — usuń auto-notatkę jeśli istnieje i wróć
+  if(groups.length===0){
+    const idx=ustalenia.findIndex(u=>u.id===noteId);
+    if(idx>=0){ustalenia.splice(idx,1);renderUstalenia();scheduleAutosave();}
+    return;
+  }
+
+  // Zbuduj tekst notatki
+  let text=`Checkboxy dodane do zadań (${dateLabel}):\n`;
+  for(const g of groups){
+    text+=`\n${g.taskName}:\n`;
+    for(const cb of g.cbs) text+=`• ${cb}\n`;
+  }
+  text=text.trimEnd();
+
+  // Zaktualizuj lub utwórz notatkę
+  const existing=ustalenia.find(u=>u.id===noteId);
+  if(existing){
+    existing.text=text;
+  } else {
+    ustalenia.unshift({id:noteId,date:dateISO,text,done:false,tags:[],cbStates:{},persons:{},addedAt:Date.now()});
+  }
+  renderUstalenia();
+  scheduleAutosave();
 }
 function taskCbStartEdit(tid,idx,span){
   if(span.querySelector('input'))return;

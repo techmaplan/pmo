@@ -272,6 +272,7 @@ async function sbSignIn(email, password) {
   _authUser  = data.user;
   sessionStorage.setItem('sb_token', _authToken);
   sessionStorage.setItem('sb_user',  JSON.stringify(_authUser));
+  if (data.refresh_token) sessionStorage.setItem('sb_refresh_token', data.refresh_token);
   return data;
 }
 
