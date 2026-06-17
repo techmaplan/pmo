@@ -5932,11 +5932,43 @@ async function __loadStateFromSupabase(){
     if(d.cbExpanded)       cbExpanded=d.cbExpanded;
     if(d.expanded)         expanded=d.expanded;
     if(d.nextId)           nextId=d.nextId;
-    if(d.phaseSummaryConfig) phaseSummaryConfig=d.phaseSummaryConfig;
+    if(d.phaseSummaryConfig){
+      phaseSummaryConfig=d.phaseSummaryConfig;
+      // Migracja: dodaj brakujące wiersze z domyślnej konfiguracji
+      const defaults=[
+        {label:'Koncepcja',                   color:'#2a3a5c', taskNames:['Analiza projektu']},
+        {label:'Projektowanie mechaniczne',    color:'#3a6a2a', taskNames:['Projekt 3D','Dokumentacja 2D']},
+        {label:'Produkcja mechaniczna',        color:'#4a2a6a', taskNames:['Produkcja MPL (SPAWANIE)','Produkcja MPL (OBRÓBKA)']},
+        {label:'Montaż mechaniczny MPL',       color:'#2a6a7a', taskNames:['Montaż MPL']},
+        {label:'Montaż mechaniczny obiekt',    color:'#7a4a2a', taskNames:['Montaż OBIEKT'], useIsObiekt:true},
+        {label:'Handlówka – ostatnia dostawa', color:'#7a5a2a', taskNames:['Handlówka'], useHandlowkaLast:true}
+      ];
+      let changed=false;
+      defaults.forEach((def,i)=>{
+        if(!phaseSummaryConfig.find(p=>p.label===def.label)){
+          // Wstaw na właściwej pozycji (przed kolejnym domyślnym wierszem który już istnieje)
+          const insertBefore=defaults.slice(i+1).map(d2=>phaseSummaryConfig.findIndex(p=>p.label===d2.label)).find(idx=>idx>=0);
+          if(insertBefore!=null && insertBefore>=0) phaseSummaryConfig.splice(insertBefore,0,def);
+          else phaseSummaryConfig.push(def);
+          changed=true;
+        }
+      });
+      if(changed) scheduleAutosave();
+    }
     if(d._psExpanded!==undefined) _psExpanded=d._psExpanded;
     if(d.projectTitle){const t=document.getElementById('project-title');if(t&&!t.value)t.value=d.projectTitle;}
     if(d.projectNum){const n=document.getElementById('project-number');if(n&&!n.value)n.value=d.projectNum;}
     render();
+    // Wyśrodkuj dziś po stabilizacji layoutu (2x rAF = po malowaniu)
+    requestAnimationFrame(()=>requestAnimationFrame(()=>{
+      const wrap=document.getElementById('gantt-wrap');
+      const todEl=document.querySelector('thead th.dc.tod');
+      if(!wrap||!todEl)return;
+      const wrapRect=wrap.getBoundingClientRect();
+      const todRect=todEl.getBoundingClientRect();
+      const offset=(todRect.left+todRect.width/2)-(wrapRect.left+wrapRect.width/2);
+      wrap.scrollLeft=wrap.scrollLeft+offset;
+    }));
     console.log('Stan wczytany dla syncId:',syncId);
   }catch(e){console.warn('Blad wczytywania:',e);}
 }
