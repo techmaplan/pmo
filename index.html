@@ -75,6 +75,28 @@ body{font-family:'Barlow',sans-serif;background:var(--g1);color:var(--black);min
 .action-btn.primary{background:var(--black);color:#fff;border-color:var(--black)}
 .action-btn.primary:hover{background:var(--g8)}
 
+.phase-tooltip{position:fixed;background:#0a0a0a;color:#fff;border:1px solid #333;padding:12px 14px;z-index:9999;pointer-events:none;opacity:0;transition:opacity .15s;min-width:220px;max-width:280px;font-family:'Barlow',sans-serif}
+.phase-tooltip.visible{opacity:1}
+.pt-title{font-size:9px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#9e9d99;margin-bottom:8px}
+.pt-row{display:flex;align-items:center;gap:8px;margin-bottom:5px}
+.pt-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.pt-label{font-size:11px;font-weight:600;color:#fff;flex:1}
+.pt-dates{font-size:10px;color:#9e9d99;white-space:nowrap}
+.pt-nodata{font-size:11px;color:#9e9d99;font-style:italic}
+.card-editor{font-size:9px;color:var(--g4);letter-spacing:.04em;margin-top:3px;display:flex;align-items:center;gap:5px}
+.editor-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0}
+.activity-section{padding:0 32px 40px}
+.activity-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;padding-bottom:8px;border-bottom:2px solid var(--black)}
+.activity-title{font-family:'Barlow Condensed',sans-serif;font-size:16px;font-weight:700;text-transform:uppercase;letter-spacing:.06em}
+.activity-list{display:flex;flex-direction:column;gap:1px}
+.activity-row{display:flex;align-items:center;gap:12px;padding:8px 12px;background:#fff;border:1px solid var(--g2)}
+.activity-row:hover{background:var(--g1)}
+.act-dot{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:#fff;flex-shrink:0}
+.act-info{flex:1;min-width:0}
+.act-project{font-size:11px;font-weight:700;color:var(--black);text-transform:uppercase;letter-spacing:.04em}
+.act-email{font-size:10px;color:var(--g6)}
+.act-time{font-size:10px;color:var(--g4);white-space:nowrap}
+.activity-empty{padding:20px;text-align:center;font-size:11px;color:var(--g4);background:#fff;border:1px solid var(--g2)}
 .project-card[draggable]{cursor:grab}
 .project-card[draggable]:active{cursor:grabbing}
 .project-card.drag-over{outline:2px dashed var(--g4);outline-offset:-2px;opacity:.6}
@@ -208,6 +230,18 @@ body{font-family:'Barlow',sans-serif;background:var(--g1);color:var(--black);min
 <div class="page">
   <div class="stats-row" id="stats-row"></div>
   <div class="projects-grid" id="projects-container"></div>
+</div>
+
+<!-- PHASE TOOLTIP -->
+<div class="phase-tooltip" id="phase-tooltip"></div>
+
+<!-- ACTIVITY SECTION -->
+<div class="activity-section" id="activity-section" style="display:none">
+  <div class="activity-header">
+    <span class="activity-title">Historia zmian</span>
+    <span id="activity-count" style="font-size:10px;color:var(--g4);font-weight:700;letter-spacing:.06em;text-transform:uppercase"></span>
+  </div>
+  <div class="activity-list" id="activity-list"></div>
 </div>
 
 <!-- EDIT MODAL (tylko do edycji metadanych) -->
@@ -524,8 +558,20 @@ function renderProjects() {
     container.innerHTML = `<div class="empty-state"><div class="es-icon">📋</div><div class="es-title">Brak projektów</div><div class="es-sub">Kliknij + Nowy projekt lub zmień filtry</div></div>`;
     return;
   }
-  container.innerHTML = list.map(p => `
-    <div class="project-card ${p.status}" onclick="openSchedule('${p.id}')" style="cursor:pointer">
+  container.innerHTML = list.map(p => {
+    const editor = _activityCache[p.syncId || p.num];
+    const lastSyncedHtml = p.lastSynced
+      ? `<div class="card-editor">Ost. aktualizacja: ${new Date(p.lastSynced).toLocaleString('pl-PL',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'})}</div>`
+      : '';
+    const editorHtml = editor
+      ? `<div class="card-editor"><div class="editor-dot" style="background:${presenceColor(editor.email)}"></div>${editorInitials(editor.email)} · ${_timeAgo(editor.ts)}</div>${lastSyncedHtml}`
+      : lastSyncedHtml;
+    return `
+    <div class="project-card ${p.status}" onclick="openSchedule('${p.id}')"
+      onmouseenter="showPhaseTooltip(event,'${p.id}')"
+      onmouseleave="hidePhaseTooltip()"
+      onmousemove="movePhaseTooltip(event)"
+      style="cursor:pointer">
       <div class="card-accent"></div>
       <div class="card-body">
         <div class="card-top">
@@ -533,12 +579,11 @@ function renderProjects() {
           <div class="card-status status-${p.status}">${statusLabel(p.status)}</div>
         </div>
         <div class="card-name">${p.name}</div>
-        ${p.lastSynced ? `<div style="font-size:9px;color:var(--g4);letter-spacing:.06em;margin-bottom:6px">Ost. aktualizacja: ${new Date(p.lastSynced).toLocaleString('pl-PL',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'})}</div>` : ''}
+        ${editorHtml}
         ${p.desc ? `<div class="card-desc">${p.desc}</div>` : ''}
         <div class="card-meta">
           ${p.start ? `<div class="meta-item"><div class="meta-val">${p.start.slice(0,7)}</div><div class="meta-key">Start</div></div>` : ''}
           ${p.end   ? `<div class="meta-sep"></div><div class="meta-item"><div class="meta-val">${p.end.slice(0,7)}</div><div class="meta-key">Koniec</div></div>` : ''}
-          ${p.hasSchedule ? `<div class="meta-sep"></div><div class="meta-item"><div class="meta-val" style="color:#27ae60">✓</div><div class="meta-key">Harmonogram</div></div>` : ''}
         </div>
         <div class="card-progress">
           <div class="progress-label"><span class="progress-text">Postęp</span><span class="progress-pct">${p.progress||0}%</span></div>
@@ -548,7 +593,8 @@ function renderProjects() {
       <div class="card-actions" onclick="event.stopPropagation()">
         <button class="action-btn" onclick="editProject('${p.id}')">✎ Edytuj</button>
       </div>
-    </div>`).join('');
+    </div>`;
+  }).join('');
 }
 
 // ── Otwieranie harmonogramu ──────────────────────────────────────────────────
@@ -743,6 +789,108 @@ sbRealtime('harmonogramy', async (event, record) => {
   if (p) { p.hasSchedule = true; renderProjects(); }
 });
 
+// ── Aktywność / Tooltip ──────────────────────────────────────────────────────
+let _activityCache = {}; // syncId -> {email, ts}
+let _activityLog = [];
+
+function editorInitials(email) {
+  const name = email.split('@')[0];
+  const parts = name.split(/[._-]/);
+  if (parts.length >= 2) return (parts[0][0]+parts[1][0]).toUpperCase();
+  return name.slice(0,2).toUpperCase();
+}
+
+function _timeAgo(ts) {
+  const diff = Date.now() - new Date(ts).getTime();
+  const m = Math.floor(diff/60000);
+  if (m < 1) return 'przed chwilą';
+  if (m < 60) return m+'m temu';
+  const h = Math.floor(m/60);
+  if (h < 24) return h+'h temu';
+  const d = Math.floor(h/24);
+  return d+'d temu';
+}
+
+async function loadActivityLog() {
+  try {
+    const res = await fetch(`${SB_URL}/rest/v1/activity_log?order=ts.desc&limit=50`, {
+      headers: { 'apikey': SB_KEY, 'Authorization': `Bearer ${_authToken || SB_KEY}` }
+    });
+    if (!res.ok) return;
+    _activityLog = await res.json();
+    // Build cache: latest editor per project
+    _activityCache = {};
+    for (const row of _activityLog) {
+      if (!_activityCache[row.sync_id]) {
+        _activityCache[row.sync_id] = { email: row.email, ts: row.ts };
+      }
+    }
+    renderActivitySection();
+  } catch(e) {}
+}
+
+function renderActivitySection() {
+  const sec = document.getElementById('activity-section');
+  const list = document.getElementById('activity-list');
+  const cnt = document.getElementById('activity-count');
+  if (!sec || !list) return;
+  if (!_activityLog.length) { sec.style.display = 'none'; return; }
+  sec.style.display = 'block';
+  cnt.textContent = _activityLog.length + ' zmian';
+  list.innerHTML = _activityLog.slice(0,20).map(row => `
+    <div class="activity-row">
+      <div class="act-dot" style="background:${presenceColor(row.email)}">${editorInitials(row.email)}</div>
+      <div class="act-info">
+        <div class="act-project">${row.project_name || row.sync_id}</div>
+        <div class="act-email">${row.email}</div>
+      </div>
+      <div class="act-time">${new Date(row.ts).toLocaleString('pl-PL',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'})}</div>
+    </div>`).join('') || '<div class="activity-empty">Brak historii zmian</div>';
+}
+
+// ── Phase Tooltip ────────────────────────────────────────────────────────────
+function showPhaseTooltip(e, projectId) {
+  const p = projects.find(x => x.id === projectId);
+  if (!p || !p.phaseSummary || !p.phaseSummary.length) return;
+  const tip = document.getElementById('phase-tooltip');
+  if (!tip) return;
+  const phases = p.phaseSummary.filter(ph => ph.start || ph.end);
+  if (!phases.length) return;
+  tip.innerHTML = `<div class="pt-title">Główne terminy</div>` +
+    phases.map(ph => {
+      const dates = ph.start && ph.end
+        ? ph.start.slice(0,7) + ' → ' + ph.end.slice(0,7)
+        : (ph.start || ph.end || '').slice(0,7);
+      return `<div class="pt-row">
+        <div class="pt-dot" style="background:${ph.color}"></div>
+        <div class="pt-label">${ph.label}</div>
+        <div class="pt-dates">${dates}</div>
+      </div>`;
+    }).join('');
+  tip.classList.add('visible');
+  _posTooltip(e);
+}
+
+function hidePhaseTooltip() {
+  const tip = document.getElementById('phase-tooltip');
+  if (tip) tip.classList.remove('visible');
+}
+
+function movePhaseTooltip(e) {
+  _posTooltip(e);
+}
+
+function _posTooltip(e) {
+  const tip = document.getElementById('phase-tooltip');
+  if (!tip) return;
+  const x = e.clientX + 16;
+  const y = e.clientY + 16;
+  const tw = tip.offsetWidth || 240;
+  const th = tip.offsetHeight || 160;
+  tip.style.left = (x + tw > window.innerWidth - 8 ? e.clientX - tw - 8 : x) + 'px';
+  tip.style.top  = (y + th > window.innerHeight - 8 ? e.clientY - th - 8 : y) + 'px';
+}
+
 // ── Toast ────────────────────────────────────────────────────────────────────
 function showToast(msg) {
   let t = document.getElementById('pm-toast');
@@ -925,9 +1073,11 @@ async function doLogin() {
     await sbSignIn(email, password);
     hideLoginScreen();
     await loadProjects();
+    await loadActivityLog();
     renderProjects();
     startPresence('panel');
     sbRealtime('projekty', async () => { await loadProjects(); renderProjects(); });
+    sbRealtime('activity_log', async () => { await loadActivityLog(); renderProjects(); });
     sbRealtime('harmonogramy', async (event, record) => {
       if (!record) return;
       const p = projects.find(x => (x.syncId || x.num) === record.sync_id);
@@ -949,11 +1099,13 @@ async function doLogin() {
     try { _authUser = JSON.parse(savedUser); } catch(e) {}
     try {
       await loadProjects();
+      await loadActivityLog();
       hideLoginScreen();
       renderProjects();
       startPresence('panel');
       // Uruchom realtime
       sbRealtime('projekty', async () => { await loadProjects(); renderProjects(); });
+      sbRealtime('activity_log', async () => { await loadActivityLog(); renderProjects(); });
       sbRealtime('harmonogramy', async (event, record) => {
         if (!record) return;
         const p = projects.find(x => (x.syncId || x.num) === record.sync_id);

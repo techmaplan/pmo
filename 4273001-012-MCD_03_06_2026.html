@@ -553,6 +553,8 @@ tr[data-rid].handlowka-done{background:#edfaf1}
 .mech-section-label .mech-title-input{font-family:'Barlow',sans-serif;font-size:15px;font-weight:700;color:#fff;letter-spacing:.01em;text-transform:none;flex:1 1 auto;min-width:0;background:transparent;border:none;border-bottom:1.5px solid rgba(255,255,255,.6);outline:none;padding:0}
 .mech-section-label .mech-del{cursor:pointer;font-size:11px;color:rgba(255,255,255,.6);background:none;border:1px solid rgba(255,255,255,.3);padding:2px 6px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;font-family:'Barlow',sans-serif;flex-shrink:0;margin-top:1px}
 .mech-section-label .mech-del:hover{color:#fff;border-color:#fff;background:rgba(0,0,0,.2)}
+.mech-section-label .mech-move-btn{cursor:pointer;font-size:10px;color:rgba(255,255,255,.7);background:none;border:1px solid rgba(255,255,255,.25);padding:1px 5px;font-family:inherit;flex-shrink:0;line-height:1.4}
+.mech-section-label .mech-move-btn:hover{color:#fff;border-color:#fff;background:rgba(0,0,0,.2)}
 
 #global-mech-pop{position:fixed;display:none;gap:6px;align-items:center;padding:5px 7px;background:#0d3d6b;border:1px solid rgba(255,255,255,.55);box-shadow:0 6px 14px rgba(0,0,0,.45),0 0 0 1px rgba(0,0,0,.3);z-index:9999;white-space:nowrap;width:max-content;pointer-events:auto}
 #global-mech-pop.visible{display:flex}
@@ -4933,6 +4935,8 @@ function render(){
     html+=`<div class="mech-title-wrap">`;
     html+=`<span class="mech-title${_sizeCls}" ondblclick="inlineMechEdit(event,${t.id})" title="${(t.name||'').replace(/"/g,'&quot;')} — kliknij dwukrotnie, aby edytować">${t.name}</span>`;
     html+=`</div>`;
+    html+=`<button class="mech-move-btn" onclick="moveMechSection(${t.id},-1)" title="Przesuń w górę">▲</button>`;
+    html+=`<button class="mech-move-btn" onclick="moveMechSection(${t.id},1)" title="Przesuń w dół">▼</button>`;
     html+=`<button class="mech-del" onclick="deleteMechSection(${t.id})" title="Usuń mechanizm">✕</button>`;
     html+=`</div>`;
     html+=`</td>`;
@@ -7019,18 +7023,20 @@ async function __loadStateFromSupabase(){
     if(d.projectTitle){const t=document.getElementById('project-title');if(t&&!t.value)t.value=d.projectTitle;}
     if(d.projectNum){const n=document.getElementById('project-number');if(n&&!n.value)n.value=d.projectNum;}
     render();
-    // Wyśrodkuj dziś i ujawnij po stabilizacji layoutu (stan już załadowany)
-    requestAnimationFrame(()=>requestAnimationFrame(()=>{
+    // Ujawnij natychmiast po renderze z danymi z Supabase, potem przewiń do dziś
+    {
       const wrap=document.getElementById('gantt-wrap');
-      const todEl=document.querySelector('thead th.dc.tod');
-      if(wrap&&todEl){
-        const wrapRect=wrap.getBoundingClientRect();
-        const todRect=todEl.getBoundingClientRect();
-        const offset=(todRect.left+todRect.width/2)-(wrapRect.left+wrapRect.width/2);
-        wrap.scrollLeft=wrap.scrollLeft+offset;
-      }
       if(wrap) wrap.style.visibility='';
-    }));
+      requestAnimationFrame(()=>requestAnimationFrame(()=>{
+        const todEl=document.querySelector('thead th.dc.tod');
+        if(wrap&&todEl){
+          const wrapRect=wrap.getBoundingClientRect();
+          const todRect=todEl.getBoundingClientRect();
+          const offset=(todRect.left+todRect.width/2)-(wrapRect.left+wrapRect.width/2);
+          wrap.scrollLeft=wrap.scrollLeft+offset;
+        }
+      }));
+    }
     console.log('Stan wczytany dla syncId:',syncId);
   }catch(e){console.warn('Blad wczytywania:',e);}
 }
@@ -7167,7 +7173,7 @@ function inlineMechEdit(e, id){
   if(!t) return;
   const inp = document.createElement('input');
   inp.className = 'mech-title-input';
-  inp.value = t.name;
+  inp.value = t.name.replace(/^⚙\s*/, "");
   wrap.replaceWith(inp);
   inp.focus(); inp.select();
   function commit(){
@@ -7198,7 +7204,8 @@ function dupMechSection(id){
     copy.id=nextId++;
     if(i===0){
       // header: bump name number
-      copy.name=copy.name.replace(/ (\d+)$/,(m,n)=>' '+(parseInt(n)+1))||copy.name+' (kopia)';
+      const _base=copy.name.replace(/^⚙\s*/,'');
+      copy.name=_base.replace(/ (\d+)$/,(m,n)=>' '+(parseInt(n)+1))||_base+' (kopia)';
     }
     copy.sub=(copy.sub||[]).map(s=>({...s,id:nextId++}));
     copy.plan=(copy.plan||[]).map(p=>({...p,id:nextId++}));
@@ -7223,6 +7230,34 @@ function deleteMechSection(id){
     render();
   });
 }
+function moveMechSection(id, dir){
+  const srcIdx = tasks.findIndex(t => t.id === id && t._isMechSection);
+  if(srcIdx < 0) return;
+  // find end of src block
+  let srcEnd = srcIdx + 1;
+  while(srcEnd < tasks.length && !tasks[srcEnd]._isMechSection) srcEnd++;
+  const block = tasks.slice(srcIdx, srcEnd);
+  if(dir < 0) {
+    // move up: find previous mech header
+    const prevIdx = tasks.slice(0, srcIdx).map((t,i)=>t._isMechSection?i:-1).filter(i=>i>=0).pop();
+    if(prevIdx === undefined) return;
+    _snapshot();
+    tasks.splice(srcIdx, block.length);
+    tasks.splice(prevIdx, 0, ...block);
+  } else {
+    // move down: find next mech header
+    if(srcEnd >= tasks.length) return;
+    // srcEnd is the next mech header index
+    let nextEnd = srcEnd + 1;
+    while(nextEnd < tasks.length && !tasks[nextEnd]._isMechSection) nextEnd++;
+    _snapshot();
+    const nextBlock = tasks.splice(srcEnd, nextEnd - srcEnd);
+    tasks.splice(srcIdx, 0, ...nextBlock);
+  }
+  render();
+  scheduleAutosave();
+}
+
 
 function addMechanizm(){
   _snapshot();
@@ -7569,7 +7604,7 @@ function tcbPopDel(){
 // Fallback: jeśli Supabase nie odpowie w 5s, ujawnij mimo wszystko
 setTimeout(function(){ const w=document.getElementById('gantt-wrap'); if(w&&w.style.visibility==='hidden') w.style.visibility=''; }, 5000);
 render();
-// Center today then reveal (prevents flash of wrong position)
+// Przewiń do dziś (bez odsłaniania — wrap odsłania dopiero __loadStateFromSupabase)
 (function(){
   const wrap = document.getElementById('gantt-wrap');
   const todEl = document.querySelector('thead th.dc.tod');
@@ -7578,7 +7613,7 @@ render();
     const todRect = todEl.getBoundingClientRect();
     wrap.scrollLeft = wrap.scrollLeft + (todRect.left + todRect.width/2) - (wrapRect.left + wrapRect.width/2);
   }
-  wrap.style.visibility = '';
+  // NIE odsłaniamy tutaj — visibility='' ustawia __loadStateFromSupabase po załadowaniu danych
 })();
 
 // Keep .ra-above visible when cursor moves from tr onto the floating panel
