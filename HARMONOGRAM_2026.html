@@ -555,6 +555,10 @@ tr[data-rid].handlowka-done{background:#edfaf1}
 .mech-section-label .mech-del:hover{color:#fff;border-color:#fff;background:rgba(0,0,0,.2)}
 .mech-section-label .mech-move-btn{cursor:pointer;font-size:10px;color:rgba(255,255,255,.7);background:none;border:1px solid rgba(255,255,255,.25);padding:1px 5px;font-family:inherit;flex-shrink:0;line-height:1.4}
 .mech-section-label .mech-move-btn:hover{color:#fff;border-color:#fff;background:rgba(0,0,0,.2)}
+.mh-badge{display:inline-flex;align-items:center;gap:2px;font-size:10px;font-family:'Barlow',sans-serif;font-weight:400;letter-spacing:.02em;margin-left:6px;padding:1px 6px;border-radius:10px;background:var(--color-background-secondary,#f5f3f0);border:0.5px solid var(--color-border-tertiary,#e0ddd9);color:var(--color-text-secondary,#777);flex-shrink:0;white-space:nowrap;vertical-align:middle}
+.mh-done{color:#2d8a45}
+.mh-sep{color:var(--color-border-secondary,#ccc);margin:0 2px}
+.mh-plan{color:#4477bb}
 
 #global-mech-pop{position:fixed;display:none;gap:6px;align-items:center;padding:5px 7px;background:#0d3d6b;border:1px solid rgba(255,255,255,.55);box-shadow:0 6px 14px rgba(0,0,0,.45),0 0 0 1px rgba(0,0,0,.3);z-index:9999;white-space:nowrap;width:max-content;pointer-events:auto}
 #global-mech-pop.visible{display:flex}
@@ -741,6 +745,7 @@ thead th.dc{position:relative}
   <button id="toolbar-toggle-btn" onclick="toggleToolbar()" style="font-family:'Barlow',sans-serif;font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;padding:3px 12px;cursor:pointer;border:1px solid #d0ccc8;background:#fff;color:#888;border-radius:4px;height:24px;display:inline-flex;align-items:center;gap:5px">▼ Pokaż pasek narzędzi</button>
   <button class="undo-btn" id="undo-btn" onclick="undo()" title="Cofnij ostatnią operację">↶ Cofnij</button>
   <button class="undo-btn" id="redo-btn" onclick="redo()" title="Brak operacji do powtórzenia" disabled="">↷ Powtórz</button>
+  <button class="undo-btn" onclick="window.open('index.html','_blank')" title="Panel projektów">⌂ Panel projektów</button>
 </div>
 <div id="toolbar-wrap" style="display:none">
 <div class="toolbar">
@@ -2007,6 +2012,7 @@ function saveMilestone(){
     if(!t.milestones)t.milestones=[];
     if(msTMsId){const i=t.milestones.findIndex(m=>m.id===msTMsId);if(i>=0)t.milestones[i]={id:msTMsId,name,date};}
     else t.milestones.push({id:'ms'+nextId++,name,date});
+    _extendTaskToDate(t, date);
     msTEditId=null;msTParentId=null;msTMsId=null;
     closeMsModal();render();return;
   }
@@ -2018,6 +2024,19 @@ function saveMilestone(){
   if(msEditId){const i=pl.milestones.findIndex(m=>m.id===msEditId);if(i>=0)pl.milestones[i]={id:msEditId,name,date};}
   else pl.milestones.push({id:'ms'+nextId++,name,date});
   closeMsModal();render();
+}
+function _extendTaskToDate(t, date){
+  if(!date) return;
+  if(t.spans && t.spans.length){
+    const lastSpan = t.spans.reduce((a,b)=>a.end>=b.end?a:b);
+    if(date > lastSpan.end){
+      lastSpan.end = date;
+      if(!t.end || date > t.end) t.end = date;
+    }
+  } else {
+    if(!t.end || date > t.end) t.end = date;
+    if(!t.start) t.start = date;
+  }
 }
 function deleteMilestone(){
   _snapshot();
@@ -3508,6 +3527,28 @@ function render(){
     const workDays=(effStart&&effEnd)?_countWorkDays(effStart,effEnd,!!(t.weekendWork)):0;
     const wks=(workDays/5).toFixed(1);
     const _taskHours=(task)=>{if(task.spans&&task.spans.length)return task.spans.reduce((a,sp)=>a+(sp.hours>0?sp.hours:_countWorkDays(sp.start,sp.end,!!(task.weekendWork))*(task.hpd||8)),0);return task.hours>0?task.hours:_countWorkDays(task.start,task.end,!!(task.weekendWork))*(task.hpd||8);};
+    const todayStr=fmt(new Date());
+    const _doneHours=(task)=>{
+      const ppl=task.people||1;
+      const we=!!(task.weekendWork);
+      const hpd=task.hpd||8;
+      const clamp=(s,e,maxD)=>{const es=s>maxD?null:s;const ee=e<todayStr?e:maxD;return es&&ee&&es<=ee?{s:es,e:ee}:null;};
+      if(task.spans&&task.spans.length)
+        return task.spans.reduce((a,sp)=>{const c=clamp(sp.start,sp.end,todayStr);return a+(c?_countWorkDays(c.s,c.e,we)*(sp.hours>0?sp.hours/_countWorkDays(sp.start,sp.end,we):hpd):0);},0)*ppl;
+      const c=clamp(task.start,task.end,todayStr);
+      return c?_countWorkDays(c.s,c.e,we)*hpd*ppl:0;
+    };
+    const _plannedHours=(task)=>{
+      const ppl=task.people||1;
+      const we=!!(task.weekendWork);
+      const hpd=task.hpd||8;
+      const d=new Date(parse(todayStr));d.setDate(d.getDate()+1);const tom=fmt(d);
+      const clamp=(s,e)=>{const es=s<tom?tom:s;return es<=e?{s:es,e:e}:null;};
+      if(task.spans&&task.spans.length)
+        return task.spans.reduce((a,sp)=>{const c=clamp(sp.start,sp.end);return a+(c?_countWorkDays(c.s,c.e,we)*(sp.hours>0?sp.hours/_countWorkDays(sp.start,sp.end,we):hpd):0);},0)*ppl;
+      const c=clamp(task.start,task.end);
+      return c?_countWorkDays(c.s,c.e,we)*hpd*ppl:0;
+    };
     // for parent with subs: sum people and manpower from subtasks
     const effPeople=hasSubs
       ?(t.sub||[]).reduce((a,s)=>a+(s.people||0),0)||1
@@ -3543,6 +3584,11 @@ function render(){
       html+=`<span class="upd-tag ${_cls}" title="${_udt}">${_ulbl}</span>`;
     }
     html+=`<span class="tn${isParent?'':' sub'}" title="${t.name}" ondblclick="inlineEditName(event,${t.id},'${isParent?'null':parentId}')">${t.name}</span>`;
+    if(t.manpowerEnabled!==false){
+      const _done=Math.round(_doneHours(t));
+      const _plan=Math.round(_plannedHours(t));
+      html+=`<span class="mh-badge" title="Przepracowane: ${_done}mh | Zaplanowane pozostało: ${_plan}mh"><span class="mh-done">${_done}mh</span><span class="mh-sep">+</span><span class="mh-plan">${_plan}mh</span></span>`;
+    }
     if(t.notes) html+=`<span class="note-badge" title="${t.notes.replace(/"/g,'&quot;')}">i</span>`;
     if(t.link) html+=`<span class="tcb-link-wrap" style="margin-left:4px"><a class="tcb-link-badge" href="${t.link.replace(/"/g,'&quot;')}" target="_blank" onmousedown="event.stopPropagation()" onclick="event.stopPropagation();window.open(this.href,'_blank');return false;">${t.linkLabel||t.link}</a><button class="tcb-link-add-badge" onmousedown="event.stopPropagation()" onclick="event.stopPropagation();openTaskLinkPop(${t.id},this)" title="Edytuj link">✎</button></span>`;
     html+='<div class="ra'+(t.name==='Handlówka'&&t.link?' ra-above':'')+'">';
@@ -3895,10 +3941,8 @@ function render(){
       html+=`<tr class="task-cb-subrow${_cbRowHidden?' cb-row-hidden':''}" data-cbparent="${t.id}" data-cbidx="${ci}">`;
       html+=`<td class="lc"><div class="tlbl sub">`;
       html+=`<button class="tcb-del-btn" onclick="taskCbRemove(${t.id},${ci})" title="Usuń checkbox">×</button>`;
-      html+=`<label style="display:grid;grid-template-columns:15px 1fr;gap:4px;align-items:start;flex:1;min-width:0;cursor:pointer">`;
-      html+=`<input type="checkbox" ${c.checked?'checked':''} style="accent-color:#27ae60;cursor:pointer;width:13px;height:13px;flex-shrink:0;margin-top:2px" onchange="taskCbToggle(${t.id},${ci},this.checked)" onclick="event.stopPropagation()"/>`;
-      html+=`<span class="tn sub" style="${doneStyle};cursor:text;white-space:normal;word-break:break-word" id="tcbn-${t.id}-${ci}" onclick="taskCbStartEdit(${t.id},${ci},this)">${c.text||'<span style=color:var(--g4);font-style:italic>nazwa…</span>'}</span>`;
-      html+=`</label>`;
+      html+=`<input type="checkbox" ${c.checked?'checked':''} style="accent-color:#27ae60;cursor:pointer;width:13px;height:13px;flex-shrink:0;margin-top:2px" onchange="taskCbToggle(${t.id},${ci},this.checked)" onclick="event.stopPropagation()" onkeydown="if(event.key==='Enter')event.preventDefault()"/>`;
+      html+=`<span class="tn sub" style="${doneStyle};cursor:text;white-space:normal;word-break:break-word;flex:1;min-width:0" id="tcbn-${t.id}-${ci}" onclick="taskCbStartEdit(${t.id},${ci},this)">${c.text||'<span style=color:var(--g4);font-style:italic>nazwa…</span>'}</span>`;
       html+=linkHtml;
       html+=`<div class="ra">`;
       html+=`</div>`;
@@ -6005,6 +6049,8 @@ function toggleToolbar(){
   wrap.style.display = vis ? 'block' : 'none';
   btn.textContent    = vis ? '▲ Ukryj pasek narzędzi' : '▼ Pokaż pasek narzędzi';
   btn.style.color    = vis ? '#333' : '#888';
+  // Chowając pasek — schowaj też statystyki
+  if(!vis) collapseStats();
 }
 
 async function saveHTML(){
@@ -6389,8 +6435,26 @@ function taskCbToggle(tid,idx,checked){
 }
 function taskCbRename(tid,idx,value){
   const t=tasks.find(x=>x.id===tid);if(!t||!t.taskChecklist)return;
+  const prev=t.taskChecklist[idx].text;
   t.taskChecklist[idx].text=value;
+  if(value!==prev) _syncCbMilestones(t);
   setTimeout(()=>{render();_syncCbAutoNote();},0);
+}
+
+function _syncCbMilestones(t){
+  if(!t||!t.taskChecklist) return;
+  const cbDates=[];
+  t.taskChecklist.forEach(c=>{
+    if(c.text){const d=_parseCbDate(c.text);if(d) cbDates.push({date:d,name:c.text,_cbAuto:true});}
+  });
+  if(!cbDates.length) return;
+  if(!t.milestones) t.milestones=[];
+  t.milestones=t.milestones.filter(m=>!m._cbAuto);
+  const seen=new Set();
+  cbDates.forEach(m=>{
+    if(!seen.has(m.date)){seen.add(m.date);t.milestones.push({id:'ms'+nextId++,name:m.name,date:m.date,_cbAuto:true});}
+  });
+  cbDates.forEach(m=>_extendTaskToDate(t,m.date));
 }
 function taskCbRemove(tid,idx){
   const t=tasks.find(x=>x.id===tid);if(!t||!t.taskChecklist)return;
