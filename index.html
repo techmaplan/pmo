@@ -550,6 +550,7 @@ function renderStats() {
 
 function getFiltered() {
   return projects.filter(p => {
+    if (p.archived) return false;
     const okFilter = currentFilter === 'all' || p.status === currentFilter;
     const q = currentSearch.toLowerCase();
     const okSearch = !q || p.name.toLowerCase().includes(q) || (p.num||'').toLowerCase().includes(q) || (p.desc||'').toLowerCase().includes(q);
@@ -746,9 +747,10 @@ async function deleteProject() {
   const _ap=projects.find(x=>x.id===editId); if(!confirm('Czy zarchiwizować projekt „'+((_ap&&_ap.name)||'')+'“?')) return;
   const p = projects.find(x => x.id === editId);
   if (!p) return;
-  // Archive: save to archiwum table, remove from projekty
-  await sbUpsert('archiwum', { id: p.id, data: { ...p, archivedAt: new Date().toISOString() } });
-  await sbDelete('projekty', editId);
+  // Archive: oznacz projekt jako zarchiwizowany w tabeli projekty
+  p.archived = true;
+  p.archivedAt = new Date().toISOString();
+  await sbUpsert('projekty', { id: p.id, data: p });
   projects = projects.filter(x => x.id !== editId);
   closeModal();
   renderProjects();
@@ -767,8 +769,8 @@ async function deleteProject() {
 
 async function loadArchive() {
   try {
-    const rows = await sbGet('archiwum');
-    return (rows || []).map(r => r.data).filter(Boolean);
+    const rows = await sbGet('projekty');
+    return (rows || []).map(r => r.data).filter(r => r && r.archived);
   } catch(e) { return []; }
 }
 
@@ -777,10 +779,10 @@ async function restoreProject(id) {
   const p = arch.find(x => x.id === id);
   if (!p) return;
   if (!confirm('Czy przywrócić projekt „'+p.name+'“?')) return;
-  const { archivedAt, ...restored } = p;
-  projects.push(restored);
-  await sbUpsert('projekty', { id: restored.id, data: restored });
-  await sbDelete('archiwum', id);
+  delete p.archived;
+  delete p.archivedAt;
+  projects.push(p);
+  await sbUpsert('projekty', { id: p.id, data: p });
   renderProjects();
   showToast('✓ Przywrócono: ' + restored.name);
   renderArchive();
@@ -794,7 +796,7 @@ async function deleteForever(id) {
     const syncId = p.syncId || p.num || p.name?.replace(/\s+/g,'_');
     if (syncId) await sbDelete('harmonogramy', syncId);
   }
-  await sbDelete('archiwum', id);
+  await sbDelete('projekty', id);
   renderArchive();
   showToast('🗑 Usunięto na zawsze');
 }
