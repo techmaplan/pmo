@@ -6,65 +6,92 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>PROJEKTY — PANEL GŁÓWNY</title>
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700&family=Barlow+Condensed:wght@600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700&family=Barlow+Condensed:wght@600;700&family=Outfit:wght@400;500;600;700&display=swap');
 *{box-sizing:border-box;margin:0;padding:0}
 :root{--black:#0a0a0a;--white:#fff;--g1:#f2f2f0;--g2:#e0dfdc;--g3:#c8c7c3;--g4:#9e9d99;--g6:#5a5955;--g8:#2a2a28}
-body{font-family:'Barlow',sans-serif;background:var(--g1);color:var(--black);min-height:100vh;display:flex;flex-direction:column}
+body{font-family:'Outfit',sans-serif;background:#eef0f5;color:#111827;min-height:100vh;display:flex;flex-direction:column}
 
-.site-header{background:var(--black);padding:0 32px;display:flex;align-items:center;justify-content:space-between;height:72px;border-bottom:2px solid #222;flex-shrink:0}
+.site-header{background:#fff;padding:0 32px;display:flex;align-items:center;justify-content:space-between;height:54px;border-bottom:1px solid #e5e7eb;flex-shrink:0}
 .header-left{display:flex;flex-direction:column;gap:2px}
-.header-title{font-family:'Barlow Condensed',sans-serif;font-size:22px;font-weight:700;color:var(--white);letter-spacing:.04em;text-transform:uppercase}
+.header-title{font-family:'Outfit',sans-serif;font-size:14px;font-weight:600;color:#111827;letter-spacing:.02em}
 .header-sub{font-size:11px;color:var(--g4);letter-spacing:.1em;text-transform:uppercase}
 .header-right{display:flex;align-items:center;gap:10px}
 
-.toolbar{padding:16px 32px 0;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
-.toolbar button{font-family:'Barlow',sans-serif;font-size:11px;font-weight:600;padding:4px 14px;cursor:pointer;border:1px solid #d0ccc8;background:#fff;color:#333;box-shadow:0 1px 3px rgba(0,0,0,.10);border-radius:4px;transition:background .12s,box-shadow .12s;letter-spacing:.04em;text-transform:uppercase;height:29px;display:inline-flex;align-items:center;gap:5px}
-.toolbar button:hover{background:#f5f3f0;box-shadow:0 2px 6px rgba(0,0,0,.13)}
-.toolbar .btn-add{background:var(--black);color:#fff;border-color:var(--black)}
-.toolbar .btn-add:hover{background:var(--g8)}
+.toolbar{padding:10px 32px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;background:#fff;border-bottom:1px solid #e4e7ec;box-shadow:0 2px 4px rgba(0,0,0,.04)}
+.toolbar button{font-family:'Outfit',sans-serif;font-size:11px;font-weight:500;padding:4px 14px;cursor:pointer;border:1px solid #e4e7ec;background:#fff;color:#374151;border-radius:5px;transition:background .12s;height:28px;display:inline-flex;align-items:center;gap:5px}
+.toolbar button:hover{background:#f3f4f6;border-color:#d1d5db}
+.toolbar .btn-add{background:#1e40af;color:#fff;border-color:#1e40af}
+.toolbar .btn-add:hover{background:#1e3a8a}
 .toolbar button:disabled{opacity:.35;cursor:not-allowed;pointer-events:none}
+.user-email{font-family:'Outfit',sans-serif;font-size:10px;color:#9ca3af}
+.header-btn{-webkit-appearance:none;appearance:none;font-family:'Outfit',sans-serif;font-size:11px;font-weight:500;padding:4px 14px;cursor:pointer;background:#fff;color:#374151;border:1px solid #e4e7ec;border-radius:5px;transition:background .12s,border-color .12s;height:28px;display:inline-flex;align-items:center;outline:none}
+.header-btn:hover{background:#f3f4f6;border-color:#d1d5db;color:#111827}
 .col-sep{width:1px;height:20px;background:var(--g3)}
 
-.filter-bar{padding:10px 32px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
-.filter-label{font-size:10px;font-weight:700;color:var(--g4);letter-spacing:.1em;text-transform:uppercase;margin-right:2px}
-.filter-btn{font-family:'Barlow',sans-serif;font-size:10px;font-weight:600;padding:2px 10px;cursor:pointer;border:1px solid var(--g3);background:transparent;color:var(--g6);border-radius:3px;transition:all .12s;letter-spacing:.04em;text-transform:uppercase;height:22px}
-.filter-btn:hover,.filter-btn.active{background:var(--black);color:#fff;border-color:var(--black)}
+.filter-bar{padding:8px 32px;display:flex;align-items:center;gap:6px;flex-wrap:wrap;background:#eef0f5}
+.filter-label{font-size:10px;font-weight:500;color:#9ca3af;letter-spacing:.06em;text-transform:uppercase;margin-right:2px;font-family:'Outfit',sans-serif}
+.filter-btn{font-family:'Outfit',sans-serif;font-size:10px;font-weight:500;padding:3px 12px;cursor:pointer;border:1px solid #e4e7ec;background:#fff;color:#6b7280;border-radius:16px;transition:all .12s;height:24px}
+.filter-btn:hover,.filter-btn.active{background:#374151;color:#fff;border-color:#374151}
 
 .page{padding:16px 32px 32px;flex:1}
 
-.stats-row{display:flex;gap:12px;margin-bottom:20px;flex-wrap:wrap}
-.stat-card{background:#fff;border:1px solid var(--g2);padding:10px 18px;min-width:120px}
-.stat-val{font-family:'Barlow Condensed',sans-serif;font-size:28px;font-weight:700;color:var(--black);line-height:1}
-.stat-label{font-size:9px;font-weight:700;color:var(--g4);letter-spacing:.1em;text-transform:uppercase;margin-top:3px}
 
-.projects-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:8px}
+.projects-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:10px;padding:12px 32px 24px}
 
-.project-card{background:#fff;border:1px solid var(--g2);transition:box-shadow .15s,border-color .15s;position:relative;display:flex;flex-direction:column}
-.project-card:hover{box-shadow:0 4px 16px rgba(0,0,0,.10);border-color:var(--g3)}
-.project-card.active .card-accent{background:#27ae60}
-.project-card.done .card-accent{background:var(--g4)}
-.card-accent{width:100%;height:3px;flex-shrink:0}
+.project-card{background:#fff;border:1px solid #e4e7ec;border-radius:8px;overflow:hidden;display:flex;flex-direction:column;cursor:pointer;transition:box-shadow .15s,border-color .15s,transform .15s;box-shadow:0 1px 3px rgba(0,0,0,.06)}
+.project-card:hover{box-shadow:0 4px 16px rgba(37,99,235,.1);border-color:#bfcfee;transform:translateY(-1px)}
+.card-header{display:flex;align-items:center;justify-content:space-between;padding:8px 12px;background:#f8f9fc;border-bottom:1px solid #eaecf2}
+.card-header.done{background:#f9fafb;border-bottom:1px solid #e5e7eb}
+.card-num{font-size:10px;color:#374151;letter-spacing:.02em;font-weight:600;font-family:'Outfit',sans-serif}
+.card-body{padding:12px 14px 10px;flex:1;display:flex;flex-direction:column;gap:6px}
+.card-name{font-size:13px;font-weight:600;color:#111827;line-height:1.35;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-family:'Outfit',sans-serif}
+.card-sub{font-size:10px;color:#9ca3af;font-family:'Outfit',sans-serif}
+.card-prog-row{display:flex;align-items:center;gap:8px;margin-top:2px}
+.card-track{flex:1;height:2px;background:#e5e7eb;border-radius:1px}
+.card-fill{height:2px;border-radius:1px;background:#2563eb}
+.card-fill.done{background:#d1d5db}
+.card-pct{font-size:10px;font-weight:600;color:#6b7280;min-width:26px;text-align:right;font-family:'Outfit',sans-serif}
+.card-pct.done{color:#9ca3af}
+.card-actions{padding:5px 10px;border-top:1px solid #eaecf2;display:flex;align-items:center;gap:3px;background:#f8f9fc}
+
+.arrow-ud{display:none}
+.list-view .arrow-lr{display:none}
+.list-view .arrow-ud{display:inline}
+.card-move-btn{background:none;border:none;color:#d1d5db;font-size:10px;cursor:pointer;padding:2px 4px;line-height:1;font-family:inherit}
+.card-move-btn:hover{color:#6b7280}
+.card-edit-btn{margin-left:auto;font-size:10px;padding:2px 9px;border:1px solid #e4e7ec;background:#f9fafb;color:#6b7280;border-radius:3px;cursor:pointer;font-family:'Outfit',sans-serif}
+.card-edit-btn:hover{border-color:#9ca3af;color:#374151;background:#f3f4f6}
+.card-accent{display:none}
 .card-body{padding:10px 12px;flex:1;display:flex;flex-direction:column}
 .card-top{display:flex;align-items:flex-start;justify-content:space-between;gap:6px;margin-bottom:4px}
-.card-num{font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:700;color:var(--g4);letter-spacing:.1em;text-transform:uppercase}
+.card-num{font-size:10px;color:var(--g4);letter-spacing:.05em}
 .card-status{font-size:9px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;padding:1px 6px;border-radius:2px}
-.status-active{background:#e8f8ee;color:#1a7a40}
-.status-done{background:var(--g1);color:var(--g6)}
-.card-name{font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:700;color:var(--black);line-height:1.2;text-transform:uppercase;letter-spacing:.02em;margin-bottom:4px}
+.status-active{background:#dcfce7;color:#15803d;font-size:9px;padding:2px 7px;border-radius:3px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;font-family:'Outfit',sans-serif}
+.status-done{background:#f3f4f6;color:#9ca3af;font-size:9px;padding:2px 7px;border-radius:3px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;font-family:'Outfit',sans-serif}
+.card-name{font-size:13px;font-weight:500;color:var(--black);line-height:1.35;margin:2px 0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .card-desc{font-size:11px;color:var(--g6);line-height:1.4;margin-bottom:6px;flex:1}
 .card-meta{display:flex;align-items:center;gap:8px;border-top:1px solid var(--g1);padding-top:6px}
 .meta-item{display:flex;flex-direction:column;gap:1px}
 .meta-val{font-family:'Barlow Condensed',sans-serif;font-size:12px;font-weight:700;color:var(--g8)}
 .meta-key{font-size:8px;font-weight:700;color:var(--g4);letter-spacing:.08em;text-transform:uppercase}
 .meta-sep{width:1px;height:22px;background:var(--g2)}
-.card-progress{margin-top:6px}
+.card-progress{display:none}
 .progress-label{display:flex;justify-content:space-between;margin-bottom:3px}
 .progress-text{font-size:8px;font-weight:700;color:var(--g4);letter-spacing:.08em;text-transform:uppercase}
 .progress-pct{font-size:8px;font-weight:700;color:var(--g8)}
 .progress-track{height:2px;background:var(--g2)}
 .progress-fill{height:100%;background:var(--black);transition:width .3s ease}
 .project-card.active .progress-fill{background:#27ae60}
-.card-actions{padding:6px 12px;border-top:1px solid var(--g1);display:flex;gap:5px;background:var(--g1)}
+
+
+
+
+
+
+
+.card-actions{padding:6px 10px;border-top:0.5px solid var(--g1);display:flex;align-items:center;gap:3px;background:var(--g1)}
+.card-edit-btn{margin-left:auto;font-family:'Barlow',sans-serif;font-size:11px;font-weight:500;padding:3px 10px;border:0.5px solid var(--g3);background:none;color:var(--g6);border-radius:4px;cursor:pointer}
+.card-edit-btn:hover{border-color:var(--g5);color:var(--g8);background:var(--white)}
 .archive-card{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:8px 12px;background:var(--white);border:1px solid var(--g2);border-radius:4px}
 .archive-card-num{font-size:10px;color:var(--g5);font-weight:600;letter-spacing:.04em}
 .archive-card-name{font-size:13px;font-weight:600;color:var(--g7)}
@@ -131,24 +158,26 @@ body{font-family:'Barlow',sans-serif;background:var(--g1);color:var(--black);min
 .empty-state .es-sub{font-size:12px;color:var(--g4)}
 
 .search-wrap{position:relative;flex:1;max-width:280px}
-.search-wrap input{width:100%;padding:5px 10px 5px 30px;font-size:12px;font-family:'Barlow',sans-serif;border:1px solid var(--g3);background:#fff;color:var(--black);outline:none;height:29px}
-.search-wrap input:focus{border-color:var(--black)}
+.search-wrap input{width:100%;padding:5px 10px 5px 30px;font-size:11px;font-family:'Outfit',sans-serif;border:1px solid #e4e7ec;background:#fff;color:#374151;outline:none;height:28px;border-radius:5px}
+.search-wrap input:focus{border-color:#9ca3af}
 .search-icon{position:absolute;left:9px;top:50%;transform:translateY(-50%);color:var(--g4);font-size:12px;pointer-events:none}
 </style>
 </head>
 <body>
 
 <header class="site-header">
-  <div class="header-left">
-    <div class="header-title">Panel projektów</div>
-    <div class="header-sub">Zarządzanie harmonogramami</div>
+  <div class="header-left" style="display:flex;align-items:center;gap:16px">
+    <div style="display:flex;flex-direction:column;gap:1px">
+      <span style="font-family:'Outfit',sans-serif;font-size:15px;font-weight:700;color:#111827;line-height:1.2">Panel projektów</span>
+      <span style="font-family:'Outfit',sans-serif;font-size:10px;color:#9ca3af;letter-spacing:.05em;text-transform:uppercase">Zarządzanie harmonogramami</span>
+    </div>
   </div>
   <div class="header-right">
     <div id="user-info" style="display:none;align-items:center;gap:10px">
-      <span id="user-email" style="font-size:11px;color:var(--g4);letter-spacing:.06em"></span>
+      <span id="user-email" class="user-email"></span>
       <div id="presence-bar" style="display:flex;align-items:center;gap:4px"></div>
-      <button onclick="openChangePassword()" style="font-family:'Barlow',sans-serif;font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;padding:3px 12px;cursor:pointer;border:1px solid rgba(255,255,255,.2);background:transparent;color:var(--g4);border-radius:3px;height:24px">Zmień hasło</button>
-      <button onclick="sbSignOut()" style="font-family:'Barlow',sans-serif;font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;padding:3px 12px;cursor:pointer;border:1px solid rgba(255,255,255,.2);background:transparent;color:var(--g4);border-radius:3px;height:24px">Wyloguj</button>
+      <button onclick="openChangePassword()" class="header-btn">Zmień hasło</button>
+      <button onclick="sbSignOut()" class="header-btn">Wyloguj</button>
     </div>
     <div class="search-wrap">
       <span class="search-icon">🔍</span>
@@ -158,39 +187,41 @@ body{font-family:'Barlow',sans-serif;background:var(--g1);color:var(--black);min
 </header>
 
 <!-- LOGIN SCREEN -->
-<div id="login-screen" style="position:fixed;inset:0;background:var(--g1);z-index:1000;display:flex;align-items:center;justify-content:center">
-  <div style="background:#fff;border:2px solid var(--black);padding:40px;width:360px;max-width:95vw;box-shadow:6px 6px 0 var(--black)">
-    <div style="font-family:'Barlow Condensed',sans-serif;font-size:24px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;margin-bottom:4px">Panel projektów</div>
-    <div style="font-size:11px;color:var(--g4);letter-spacing:.1em;text-transform:uppercase;margin-bottom:28px">Zaloguj się aby kontynuować</div>
-    <div style="margin-bottom:14px">
-      <label style="font-size:10px;font-weight:700;color:var(--g6);text-transform:uppercase;letter-spacing:.08em;display:block;margin-bottom:4px">Email</label>
-      <input id="login-email" type="email" placeholder="twoj@email.com" style="width:100%;padding:8px 10px;font-size:13px;font-family:'Barlow',sans-serif;border:1.5px solid var(--g3);outline:none;background:#fff" onkeydown="if(event.key==='Enter')doLogin()">
+<div id="login-screen" style="position:fixed;inset:0;background:#eef0f5;z-index:1000;display:flex;align-items:center;justify-content:center;font-family:'Outfit',sans-serif">
+  <div style="background:#fff;border:1px solid #e4e7ec;border-radius:10px;padding:36px 40px;width:380px;max-width:95vw;box-shadow:0 4px 24px rgba(0,0,0,.08)">
+    <div style="margin-bottom:28px">
+      <div style="font-family:'Outfit',sans-serif;font-size:20px;font-weight:700;color:#111827;margin-bottom:4px">Panel projektów</div>
+      <div style="font-size:11px;color:#9ca3af;letter-spacing:.04em">Zaloguj się, aby kontynuować</div>
     </div>
-    <div style="margin-bottom:8px">
-      <label style="font-size:10px;font-weight:700;color:var(--g6);text-transform:uppercase;letter-spacing:.08em;display:block;margin-bottom:4px">Hasło</label>
-      <input id="login-password" type="password" placeholder="••••••••" style="width:100%;padding:8px 10px;font-size:13px;font-family:'Barlow',sans-serif;border:1.5px solid var(--g3);outline:none;background:#fff" onkeydown="if(event.key==='Enter')doLogin()">
+    <div style="margin-bottom:14px">
+      <label style="font-family:'Outfit',sans-serif;font-size:11px;font-weight:500;color:#374151;display:block;margin-bottom:5px">Email</label>
+      <input id="login-email" type="email" placeholder="twoj@email.com" style="width:100%;padding:8px 12px;font-size:13px;font-family:'Outfit',sans-serif;border:1px solid #e4e7ec;border-radius:5px;outline:none;background:#fff;color:#111827;transition:border-color .12s" onkeydown="if(event.key==='Enter')doLogin()" onfocus="this.style.borderColor='#9ca3af'" onblur="this.style.borderColor='#e4e7ec'">
+    </div>
+    <div style="margin-bottom:10px">
+      <label style="font-family:'Outfit',sans-serif;font-size:11px;font-weight:500;color:#374151;display:block;margin-bottom:5px">Hasło</label>
+      <input id="login-password" type="password" placeholder="••••••••" style="width:100%;padding:8px 12px;font-size:13px;font-family:'Outfit',sans-serif;border:1px solid #e4e7ec;border-radius:5px;outline:none;background:#fff;color:#111827;transition:border-color .12s" onkeydown="if(event.key==='Enter')doLogin()" onfocus="this.style.borderColor='#9ca3af'" onblur="this.style.borderColor='#e4e7ec'">
     </div>
     <div style="margin-bottom:20px;text-align:right">
-      <button onclick="openForgotPassword()" style="font-family:'Barlow',sans-serif;font-size:10px;font-weight:600;color:var(--g4);background:none;border:none;cursor:pointer;letter-spacing:.04em;padding:0;text-decoration:underline">Zapomniałem hasła</button>
+      <button onclick="openForgotPassword()" style="font-family:'Outfit',sans-serif;font-size:10px;color:#9ca3af;background:none;border:none;cursor:pointer;padding:0">Zapomniałem hasła</button>
     </div>
-    <div id="login-error" style="font-size:11px;color:#c0392b;margin-bottom:12px;display:none"></div>
-    <button id="login-btn" onclick="doLogin()" style="width:100%;font-family:'Barlow',sans-serif;font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;padding:10px;cursor:pointer;border:1.5px solid var(--black);background:var(--black);color:#fff;height:40px">Zaloguj</button>
+    <div id="login-error" style="font-size:11px;color:#dc2626;margin-bottom:12px;display:none;background:#fef2f2;border:1px solid #fecaca;padding:8px 12px;border-radius:5px"></div>
+    <button id="login-btn" onclick="doLogin()" style="width:100%;font-family:'Outfit',sans-serif;font-size:13px;font-weight:600;padding:10px;cursor:pointer;border:none;background:#1e293b;color:#fff;border-radius:5px;height:40px;transition:background .12s">Zaloguj</button>
   </div>
 </div>
 
 <!-- RESET HASŁA MODAL -->
-<div id="forgot-modal" style="position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:1100;display:none;align-items:center;justify-content:center">
-  <div style="background:#fff;border:2px solid var(--black);padding:32px;width:360px;max-width:95vw;box-shadow:6px 6px 0 var(--black)" onclick="event.stopPropagation()">
-    <div style="font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;margin-bottom:20px">Reset hasła</div>
-    <div style="font-size:12px;color:var(--g6);margin-bottom:16px">Wpisz swój email — wyślemy link do zresetowania hasła.</div>
+<div id="forgot-modal" style="position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:1100;display:none;align-items:center;justify-content:center">
+  <div style="background:#fff;border:1px solid #e4e7ec;border-radius:10px;padding:32px;width:380px;max-width:95vw;box-shadow:0 4px 24px rgba(0,0,0,.1)" onclick="event.stopPropagation()">
+    <div style="font-family:'Outfit',sans-serif;font-size:17px;font-weight:700;color:#111827;margin-bottom:6px">Reset hasła</div>
+    <div style="font-size:12px;color:#6b7280;margin-bottom:16px;font-family:'Outfit',sans-serif">Wpisz swój email — wyślemy link do zresetowania hasła.</div>
     <div style="margin-bottom:16px">
-      <label style="font-size:10px;font-weight:700;color:var(--g6);text-transform:uppercase;letter-spacing:.08em;display:block;margin-bottom:4px">Email</label>
-      <input id="forgot-email" type="email" placeholder="twoj@email.com" style="width:100%;padding:8px 10px;font-size:13px;font-family:'Barlow',sans-serif;border:1.5px solid var(--g3);outline:none;background:#fff" onkeydown="if(event.key==='Enter')doForgotPassword()">
+      <label style="font-family:'Outfit',sans-serif;font-size:11px;font-weight:500;color:#374151;display:block;margin-bottom:5px">Email</label>
+      <input id="forgot-email" type="email" placeholder="twoj@email.com" style="width:100%;padding:8px 12px;font-size:13px;font-family:'Outfit',sans-serif;border:1px solid #e4e7ec;border-radius:5px;outline:none;background:#fff;color:#111827" onkeydown="if(event.key==='Enter')doForgotPassword()">
     </div>
-    <div id="forgot-msg" style="font-size:11px;margin-bottom:12px;display:none"></div>
+    <div id="forgot-msg" style="font-size:11px;margin-bottom:12px;display:none;font-family:'Outfit',sans-serif"></div>
     <div style="display:flex;gap:8px;justify-content:flex-end">
-      <button onclick="closeForgotPassword()" style="font-family:'Barlow',sans-serif;font-size:11px;font-weight:700;padding:6px 18px;cursor:pointer;border:1.5px solid var(--black);background:#fff;color:var(--black);letter-spacing:.04em;text-transform:uppercase;height:32px">Anuluj</button>
-      <button id="forgot-btn" onclick="doForgotPassword()" style="font-family:'Barlow',sans-serif;font-size:11px;font-weight:700;padding:6px 18px;cursor:pointer;border:1.5px solid var(--black);background:var(--black);color:#fff;letter-spacing:.04em;text-transform:uppercase;height:32px">Wyślij link</button>
+      <button onclick="closeForgotPassword()" style="font-family:'Outfit',sans-serif;font-size:11px;font-weight:500;padding:6px 16px;cursor:pointer;border:1px solid #e4e7ec;background:#fff;color:#374151;border-radius:5px;height:32px">Anuluj</button>
+      <button id="forgot-btn" onclick="doForgotPassword()" style="font-family:'Outfit',sans-serif;font-size:11px;font-weight:600;padding:6px 16px;cursor:pointer;border:none;background:#1e293b;color:#fff;border-radius:5px;height:32px">Wyślij link</button>
     </div>
   </div>
 </div>
@@ -232,7 +263,6 @@ body{font-family:'Barlow',sans-serif;background:var(--g1);color:var(--black);min
 </div>
 
 <div class="page">
-  <div class="stats-row" id="stats-row"></div>
   <div class="projects-grid" id="projects-container"></div>
 
   <div style="margin-top:28px;border-top:1px solid var(--g2);padding-top:16px">
@@ -529,17 +559,7 @@ function statusLabel(s) {
   return {active:'Aktywny',done:'Zakończony'}[s] || s;
 }
 
-function renderStats() {
-  const t = projects.length;
-  const a = projects.filter(p=>p.status==='active').length;
-  const d = projects.filter(p=>p.status==='done').length;
-  const pl= 0; // planned status removed
-  document.getElementById('stats-row').innerHTML = `
-    <div class="stat-card"><div class="stat-val">${t}</div><div class="stat-label">Wszystkie</div></div>
-    <div class="stat-card"><div class="stat-val">${a}</div><div class="stat-label">Aktywne</div></div>
-    <div class="stat-card"><div class="stat-val">${pl}</div><div class="stat-label">Planowane</div></div>
-    <div class="stat-card"><div class="stat-val">${d}</div><div class="stat-label">Zakończone</div></div>`;
-}
+
 
 function getFiltered() {
   return projects.filter(p => {
@@ -551,8 +571,22 @@ function getFiltered() {
   });
 }
 
+async function moveProject(id, dir) {
+  const visible = getFiltered();
+  const idx = visible.findIndex(p => p.id === id);
+  if (idx < 0) return;
+  const newIdx = idx + dir;
+  if (newIdx < 0 || newIdx >= visible.length) return;
+  // Find positions in full projects array
+  const ai = projects.findIndex(p => p.id === visible[idx].id);
+  const bi = projects.findIndex(p => p.id === visible[newIdx].id);
+  if (ai < 0 || bi < 0) return;
+  [projects[ai], projects[bi]] = [projects[bi], projects[ai]];
+  renderProjects();
+  await saveProjects();
+}
+
 function renderProjects() {
-  renderStats();
   const container = document.getElementById('projects-container');
   const list = getFiltered();
   if (!list.length) {
@@ -571,28 +605,24 @@ function renderProjects() {
     <div class="project-card ${p.status}" onclick="openSchedule('${p.id}')"
       onmouseenter="showPhaseTooltip(event,'${p.id}')"
       onmouseleave="hidePhaseTooltip()"
-      onmousemove="movePhaseTooltip(event)"
-      style="cursor:pointer">
-      <div class="card-accent"></div>
+      onmousemove="movePhaseTooltip(event)">
+      <div class="card-header ${p.status}">
+        <span class="card-num">${p.num || '—'}</span>
+        <span class="card-status status-${p.status}">${statusLabel(p.status)}</span>
+      </div>
       <div class="card-body">
-        <div class="card-top">
-          <div class="card-num">${p.num || '—'}</div>
-          <div class="card-status status-${p.status}">${statusLabel(p.status)}</div>
-        </div>
         <div class="card-name">${p.name}</div>
+        <div class="card-sub">${p.end ? 'do ' + p.end.slice(0,7) : (p.start ? p.start.slice(0,7) : '')}</div>
         ${editorHtml}
-        ${p.desc ? `<div class="card-desc">${p.desc}</div>` : ''}
-        <div class="card-meta">
-          ${p.start ? `<div class="meta-item"><div class="meta-val">${p.start.slice(0,7)}</div><div class="meta-key">Start</div></div>` : ''}
-          ${p.end   ? `<div class="meta-sep"></div><div class="meta-item"><div class="meta-val">${p.end.slice(0,7)}</div><div class="meta-key">Koniec</div></div>` : ''}
-        </div>
-        <div class="card-progress">
-          <div class="progress-label"><span class="progress-text">Postęp</span><span class="progress-pct">${p.progress||0}%</span></div>
-          <div class="progress-track"><div class="progress-fill" style="width:${p.progress||0}%"></div></div>
+        <div class="card-prog-row">
+          <div class="card-track"><div class="card-fill ${p.status}" style="width:${p.progress||0}%"></div></div>
+          <span class="card-pct ${p.status}">${p.progress||0}%</span>
         </div>
       </div>
       <div class="card-actions" onclick="event.stopPropagation()">
-        <button class="action-btn" onclick="editProject('${p.id}')">✎ Edytuj</button>
+        <button class="card-move-btn cmb-prev" onclick="moveProject('${p.id}',-1)" title="Poprzedni/Wyżej"><span class="arrow-lr">◀</span><span class="arrow-ud">▲</span></button>
+        <button class="card-move-btn cmb-next" onclick="moveProject('${p.id}',1)" title="Następny/Niżej"><span class="arrow-lr">▶</span><span class="arrow-ud">▼</span></button>
+        <button class="card-edit-btn" onclick="editProject('${p.id}')">✎ Edytuj</button>
       </div>
     </div>`;
   }).join('');
@@ -633,7 +663,9 @@ function filterProjects() {
   renderProjects();
 }
 function setView(v) {
-  document.getElementById('projects-container').style.gridTemplateColumns = v === 'list' ? '1fr' : '';
+  const c = document.getElementById('projects-container');
+  c.style.gridTemplateColumns = v === 'list' ? '1fr' : '';
+  c.classList.toggle('list-view', v === 'list');
 }
 
 // ── Zasoby / Szablon ─────────────────────────────────────────────────────────
@@ -744,7 +776,7 @@ async function deleteProject() {
   p.archived = true;
   p.archivedAt = new Date().toISOString();
   await sbUpsert('projekty', { id: p.id, data: p });
-  projects = projects.filter(x => x.id !== editId);
+  // NIE usuwamy z projects — projekt zostaje w pamięci z flagą archived
   closeModal();
   renderProjects();
   showToast('📦 Przeniesiono do archiwum');
@@ -771,6 +803,9 @@ async function restoreProject(id) {
   if (!confirm('Czy przywrócić projekt „'+p.name+'“?')) return;
   delete p.archived;
   delete p.archivedAt;
+  // Przenieś na koniec listy
+  projects = projects.filter(x => x.id !== id);
+  projects.push(p);
   await sbUpsert('projekty', { id: p.id, data: p });
   renderProjects();
   showToast('✓ Przywrócono: ' + p.name);
