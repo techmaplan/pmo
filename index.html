@@ -70,6 +70,15 @@ body{font-family:'Barlow',sans-serif;background:var(--g1);color:var(--black);min
 .project-card.active .progress-fill{background:#27ae60}
 .project-card.paused .progress-fill{background:#e67e22}
 .card-actions{padding:6px 12px;border-top:1px solid var(--g1);display:flex;gap:5px;background:var(--g1)}
+.archive-card{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:8px 12px;background:var(--white);border:1px solid var(--g2);border-radius:4px}
+.archive-card-num{font-size:10px;color:var(--g5);font-weight:600;letter-spacing:.04em}
+.archive-card-name{font-size:13px;font-weight:600;color:var(--g7)}
+.archive-card-date{font-size:10px;color:var(--g4);margin-top:1px}
+.archive-card-actions{display:flex;gap:6px;flex-shrink:0}
+.archive-restore-btn{font-family:'Barlow',sans-serif;font-size:11px;font-weight:600;padding:4px 10px;border:1px solid #27ae60;background:#f0faf4;color:#1a7a40;border-radius:3px;cursor:pointer}
+.archive-restore-btn:hover{background:#27ae60;color:#fff}
+.archive-del-btn{font-family:'Barlow',sans-serif;font-size:11px;font-weight:600;padding:4px 10px;border:1px solid var(--g3);background:none;color:var(--g5);border-radius:3px;cursor:pointer}
+.archive-del-btn:hover{background:#fde8e8;border-color:#c0392b;color:#c0392b}
 .action-btn{font-family:'Barlow',sans-serif;font-size:10px;font-weight:600;padding:2px 8px;cursor:pointer;border:1px solid #d0ccc8;background:#fff;color:#444;border-radius:3px;transition:all .12s;letter-spacing:.04em;text-transform:uppercase;height:22px;display:inline-flex;align-items:center;gap:4px}
 .action-btn:hover{background:#f5f3f0;box-shadow:0 1px 4px rgba(0,0,0,.1)}
 .action-btn.primary{background:var(--black);color:#fff;border-color:var(--black)}
@@ -118,8 +127,8 @@ body{font-family:'Barlow',sans-serif;background:var(--g1);color:var(--black);min
 .modal-actions .btn-save:hover{background:var(--g8)}
 .modal-actions .btn-cancel{background:#fff;color:var(--black)}
 .modal-actions .btn-cancel:hover{background:var(--g1)}
-.btn-del{margin-right:auto;background:#fff;color:#c0392b;border-color:#c0392b}
-.btn-del:hover{background:#c0392b;color:#fff}
+.btn-del{margin-right:auto;background:#fff;color:#7a5010;border-color:#e8a020}
+.btn-del:hover{background:#e8a020;color:#fff}
 
 .empty-state{padding:64px 32px;text-align:center;grid-column:1/-1}
 .empty-state .es-icon{font-size:40px;margin-bottom:16px}
@@ -230,6 +239,17 @@ body{font-family:'Barlow',sans-serif;background:var(--g1);color:var(--black);min
 <div class="page">
   <div class="stats-row" id="stats-row"></div>
   <div class="projects-grid" id="projects-container"></div>
+
+  <div style="margin-top:28px;border-top:1px solid var(--g2);padding-top:16px">
+    <div style="display:flex;align-items:center;gap:8px;cursor:pointer;user-select:none" onclick="toggleArchive()">
+      <span id="archive-toggle-icon" style="font-size:11px;color:var(--g4)">▶</span>
+      <span style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--g5)">Archiwum</span>
+      <span id="archive-badge" style="font-size:10px;background:var(--g2);color:var(--g6);padding:1px 6px;border-radius:10px;font-weight:600"></span>
+    </div>
+    <div id="archive-section" data-open="0">
+      <div id="archive-container" style="display:none;margin-top:10px;display:flex;flex-direction:column;gap:6px;display:none"></div>
+    </div>
+  </div>
 </div>
 
 <!-- PHASE TOOLTIP -->
@@ -280,7 +300,7 @@ body{font-family:'Barlow',sans-serif;background:var(--g1);color:var(--black);min
       <input type="number" id="f-progress" min="0" max="100" value="0">
     </div>
     <div class="modal-actions">
-      <button class="btn-del" id="btn-delete" onclick="deleteProject()">🗑 Usuń</button>
+      <button class="btn-del" id="btn-delete" onclick="deleteProject()">📦 Archiwizuj</button>
       <button class="btn-cancel" onclick="closeModal()">Anuluj</button>
       <button class="btn-save" onclick="saveProject()">Zapisz</button>
     </div>
@@ -481,26 +501,13 @@ async function fetchTemplate() {
 }
 
 async function openNewFromTemplate(projectName, projectNum) {
-  let src;
-  try {
-    src = await fetchTemplate();
-    saveTemplateCache(src);
-  } catch(e) {
-    console.error('fetchTemplate failed:', e);
-    // Ostateczny fallback — file input
-    const input = document.createElement('input');
-    input.type = 'file'; input.accept = '.html';
-    input.onchange = ev => {
-      const file = ev.target.files[0]; if (!file) return;
-      const reader = new FileReader();
-      reader.onload = re => { saveTemplateCache(re.target.result); openNewFromTemplate(projectName, projectNum); };
-      reader.readAsText(file);
-    };
-    input.click();
-    showToast('Nie znaleziono szablonu — wybierz plik HARMONOGRAM_2026.html');
-    return;
-  }
-  openInTab(makeBlankSchedule(src, projectName, projectNum));
+  const syncId = (projectNum || projectName || '').replace(/\s+/g,'_');
+  const loc  = window.location.href.split('?')[0];
+  const base = loc.endsWith('/') ? loc : loc.substring(0, loc.lastIndexOf('/') + 1);
+  const token = _authToken || '';
+  const refreshToken = sessionStorage.getItem('sb_refresh_token') || '';
+  const params = new URLSearchParams({ token, refreshToken, syncId, name: projectName, num: projectNum || syncId });
+  window.open(base + 'HARMONOGRAM_2026.html?' + params.toString(), '_blank');
 }
 
 document.getElementById('btn-new').addEventListener('click', () => {
@@ -625,6 +632,7 @@ function setFilter(f, el) {
   document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
   el.classList.add('active');
   renderProjects();
+  renderArchive();
 }
 function filterProjects() {
   currentSearch = document.getElementById('search-input').value;
@@ -735,16 +743,87 @@ async function saveProject() {
 }
 
 async function deleteProject() {
-  if (!confirm('Usunąć projekt?')) return;
+  const _ap=projects.find(x=>x.id===editId); if(!confirm('Czy zarchiwizować projekt „'+((_ap&&_ap.name)||'')+'“?')) return;
   const p = projects.find(x => x.id === editId);
-  if (p) {
-    const syncId = p.syncId || p.num || p.name.replace(/\s+/g,'_');
-    await sbDelete('harmonogramy', syncId);
-  }
+  if (!p) return;
+  // Archive: save to archiwum table, remove from projekty
+  await sbUpsert('archiwum', { id: p.id, data: { ...p, archivedAt: new Date().toISOString() } });
   await sbDelete('projekty', editId);
   projects = projects.filter(x => x.id !== editId);
   closeModal();
   renderProjects();
+  showToast('📦 Przeniesiono do archiwum');
+}
+
+async function loadArchive() {
+  try {
+    const rows = await sbGet('archiwum');
+    return (rows || []).map(r => r.data).filter(Boolean);
+  } catch(e) { return []; }
+}
+
+async function restoreProject(id) {
+  const arch = await loadArchive();
+  const p = arch.find(x => x.id === id);
+  if (!p) return;
+  if (!confirm('Czy przywrócić projekt „'+p.name+'“?')) return;
+  const { archivedAt, ...restored } = p;
+  projects.push(restored);
+  await sbUpsert('projekty', { id: restored.id, data: restored });
+  await sbDelete('archiwum', id);
+  renderProjects();
+  showToast('✓ Przywrócono: ' + restored.name);
+  renderArchive();
+}
+
+async function deleteForever(id) {
+  const _fp=(await loadArchive()).find(x=>x.id===id); if(!confirm('Czy trwale usuń projekt „'+((_fp&&_fp.name)||'')+'“? Tego nie można cofnąć.')) return;
+  const arch = await loadArchive();
+  const p = arch.find(x => x.id === id);
+  if (p) {
+    const syncId = p.syncId || p.num || p.name?.replace(/\s+/g,'_');
+    if (syncId) await sbDelete('harmonogramy', syncId);
+  }
+  await sbDelete('archiwum', id);
+  renderArchive();
+  showToast('🗑 Usunięto na zawsze');
+}
+
+async function renderArchive() {
+  const arch = await loadArchive();
+  const sec = document.getElementById('archive-section');
+  const container = document.getElementById('archive-container');
+  const badge = document.getElementById('archive-badge');
+  if (badge) badge.textContent = arch.length || '';
+  if (!sec || !container) return;
+  if (!arch.length) {
+    container.innerHTML = '<div style="color:var(--g4);font-size:12px;padding:8px 0;font-style:italic">Archiwum jest puste</div>';
+    return;
+  }
+  container.innerHTML = arch.map(p => {
+    const archivedDate = p.archivedAt ? new Date(p.archivedAt).toLocaleDateString('pl-PL') : '—';
+    return `<div class="archive-card">
+      <div class="archive-card-info">
+        <div class="archive-card-num">${p.num || '—'}</div>
+        <div class="archive-card-name">${p.name}</div>
+        <div class="archive-card-date">zarchiwizowano ${archivedDate}</div>
+      </div>
+      <div class="archive-card-actions">
+        <button class="archive-restore-btn" onclick="restoreProject('${p.id}')">↩ Przywróć</button>
+        <button class="archive-del-btn" onclick="deleteForever('${p.id}')">✕ Usuń na zawsze</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function toggleArchive() {
+  const sec = document.getElementById('archive-section');
+  if (!sec) return;
+  const isOpen = sec.dataset.open === '1';
+  sec.dataset.open = isOpen ? '0' : '1';
+  document.getElementById('archive-container').style.display = isOpen ? 'none' : 'block';
+  document.getElementById('archive-toggle-icon').textContent = isOpen ? '▶' : '▼';
+  if (!isOpen) renderArchive();
 }
 
 // ── Sync z harmonogramu ──────────────────────────────────────────────────────
