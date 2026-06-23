@@ -247,7 +247,7 @@ body{font-family:'Barlow',sans-serif;background:var(--g1);color:var(--black);min
       <span id="archive-badge" style="font-size:10px;background:var(--g2);color:var(--g6);padding:1px 6px;border-radius:10px;font-weight:600"></span>
     </div>
     <div id="archive-section" data-open="0">
-      <div id="archive-container" style="display:none;margin-top:10px;display:flex;flex-direction:column;gap:6px;display:none"></div>
+      <div id="archive-container" style="display:none;margin-top:10px;flex-direction:column;gap:6px"></div>
     </div>
   </div>
 </div>
@@ -753,6 +753,16 @@ async function deleteProject() {
   closeModal();
   renderProjects();
   showToast('📦 Przeniesiono do archiwum');
+  // Otwórz archiwum i odśwież
+  const _sec = document.getElementById('archive-section');
+  const _con = document.getElementById('archive-container');
+  const _ico = document.getElementById('archive-toggle-icon');
+  if (_sec && _con) {
+    _sec.dataset.open = '1';
+    _con.style.display = 'flex';
+    if (_ico) _ico.textContent = '▼';
+  }
+  renderArchive();
 }
 
 async function loadArchive() {
