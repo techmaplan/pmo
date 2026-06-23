@@ -767,15 +767,12 @@ async function deleteProject() {
   renderArchive();
 }
 
-async function loadArchive() {
-  try {
-    const rows = await sbGet('projekty');
-    return (rows || []).map(r => r.data).filter(r => r && r.archived);
-  } catch(e) { return []; }
+function loadArchive() {
+  return projects.filter(p => p && p.archived);
 }
 
 async function restoreProject(id) {
-  const arch = await loadArchive();
+  const arch = loadArchive();
   const p = arch.find(x => x.id === id);
   if (!p) return;
   if (!confirm('Czy przywrócić projekt „'+p.name+'“?')) return;
@@ -789,8 +786,8 @@ async function restoreProject(id) {
 }
 
 async function deleteForever(id) {
-  const _fp=(await loadArchive()).find(x=>x.id===id); if(!confirm('Czy trwale usuń projekt „'+((_fp&&_fp.name)||'')+'“? Tego nie można cofnąć.')) return;
-  const arch = await loadArchive();
+  const _fp=(loadArchive()).find(x=>x.id===id); if(!confirm('Czy trwale usuń projekt „'+((_fp&&_fp.name)||'')+'“? Tego nie można cofnąć.')) return;
+  const arch = loadArchive();
   const p = arch.find(x => x.id === id);
   if (p) {
     const syncId = p.syncId || p.num || p.name?.replace(/\s+/g,'_');
@@ -801,8 +798,8 @@ async function deleteForever(id) {
   showToast('🗑 Usunięto na zawsze');
 }
 
-async function renderArchive() {
-  const arch = await loadArchive();
+function renderArchive() {
+  const arch = loadArchive();
   const sec = document.getElementById('archive-section');
   const container = document.getElementById('archive-container');
   const badge = document.getElementById('archive-badge');
