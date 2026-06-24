@@ -2795,10 +2795,6 @@ function shiftView(n){
   window._skipViewStartClamp=true;
   render();
   window._skipViewStartClamp=false;
-  requestAnimationFrame(()=>{
-    const wrap=document.getElementById('gantt-wrap');
-    if(wrap)wrap.scrollLeft=0;
-  });
 }
 function goToday(){
   viewStart=new Date();
@@ -2807,7 +2803,7 @@ function goToday(){
   render();
   window._skipViewStartClamp=false;
   // Wyśrodkuj dziś na ekranie
-  requestAnimationFrame(()=>{
+  setTimeout(()=>{
     const wrap=document.getElementById('gantt-wrap');
     const todEl=document.querySelector('thead th.dc.tod');
     if(!wrap||!todEl)return;
@@ -2816,7 +2812,7 @@ function goToday(){
     const _lcW=document.querySelector('thead th.lc')?.getBoundingClientRect().width||0;
     const offset=(todRect.left+todRect.width/2)-(wrapRect.left+_lcW+(wrapRect.width-_lcW)/2);
     wrap.scrollLeft=wrap.scrollLeft+offset;
-  });
+  },50);
 }
 
 // === GLOBALNY DYMEK AKCJI MECHANIZMU ===
