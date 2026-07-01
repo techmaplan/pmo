@@ -350,12 +350,12 @@ tbody tr.row-dragging td.lc{background:#e8e6e0!important}
 
 tbody tr:hover td.lc{background:#f7f7f5;overflow:visible}
 td.mc{text-align:center;border-right:1px solid var(--g2);font-size:12px;color:var(--g8);vertical-align:middle;padding:0 4px;white-space:nowrap}
-.mpi{width:46px;font-size:12px;font-family:'Barlow',sans-serif;text-align:center;border:1px solid var(--g3);padding:2px 3px;background:var(--white);color:var(--black);outline:none}
+.mpi{width:36px;font-size:12px;font-family:'Barlow',sans-serif;text-align:center;border:1px solid var(--g3);padding:2px 3px;background:var(--white);color:var(--black);outline:none;flex-shrink:0}
 .mpi:focus{border-color:var(--black)}
-.mpw{display:flex;align-items:center;justify-content:center;gap:3px}
-.mpl{font-size:10px;color:var(--g4)}
-td.dc{height:28px;border-right:1px solid var(--g2);position:relative;padding:0;z-index:0}
-td.dc.has-bar{overflow:visible;z-index:1}
+.mpw{display:flex;align-items:center;justify-content:flex-end;gap:4px;padding:0 4px}
+.mpl{font-size:10px;color:var(--g4);white-space:nowrap}
+td.dc{height:28px;border-right:1px solid var(--g2);position:relative;padding:0}
+td.dc.has-bar{overflow:visible}
 td.dc.wc{width:var(--cell-w-day);min-width:var(--cell-w-day)}
 td.dc.wkc{width:var(--cell-w-week);min-width:var(--cell-w-week)}
 td.dc.tod-col{background:rgba(192,57,43,.07)}
@@ -384,7 +384,7 @@ tbody tr:hover td.dc.we-col{background:#e7e3db}
 .bar-ghost{position:fixed;pointer-events:none;border:2px dashed #555;background:rgba(0,0,0,.08);border-radius:0;z-index:200}
 .bar.sub-bar{top:7px;height:14px;opacity:.85}
 .bprog{position:absolute;top:0;left:0;height:100%;opacity:.35;background:#fff}
-.blbl{display:block;position:absolute;top:50%;transform:translateY(-50%);left:0;width:100%;text-align:center;font-size:10px;font-weight:700;color:#fff;white-space:nowrap;text-transform:uppercase;letter-spacing:.03em;text-shadow:0 1px 4px rgba(0,0,0,.8);pointer-events:none;padding:0 3px;box-sizing:border-box}
+.blbl{display:block;position:absolute;text-align:center;font-size:10px;font-weight:400;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-transform:none;letter-spacing:0;pointer-events:none;padding:0 4px;box-sizing:border-box;z-index:20}
 .xbtn{cursor:pointer;font-size:10px;color:var(--g4);padding:2px;background:none;border:none;flex-shrink:0;width:14px}
 .ra{display:flex;gap:2px;opacity:0;transition:opacity .15s;flex-shrink:0;position:absolute;right:2px;top:50%;bottom:auto;transform:translateY(-50%);background:rgba(255,255,255,.97);padding:3px 4px;border:1px solid var(--g3);box-shadow:0 2px 6px rgba(0,0,0,.18);z-index:35;pointer-events:none;border-radius:3px}
 .ra.ra-above{top:auto;bottom:calc(100% + 2px);transform:none;right:auto;left:0}
@@ -3747,10 +3747,8 @@ function render(){
               (t.milestones||[]).forEach(ms=>{if(ms.date===p.date){_tmhWe+=`<div class="milestone-marker" style="left:${cellLeft+4}px" onclick="event.stopPropagation();editTaskMilestone(${t.id},'${isParent?'null':parentId}','${ms.id}')" title="${ms.name}"></div>`;}});
               html+=`<div class="bar-wrap"><div class="bar${isParent?'':' sub-bar'}" data-id="${t.id}" data-pid="${isParent?'null':parentId}" style="left:${cellLeft}px;width:${cellW}px;background:${barColor};top:${tp}px;height:${ht}px;${borderStyle}" data-label="${isWEStart?shortName(t.name,18):''}" data-seglen="${isWEStart?totalSpan:0}" data-spanid="${_spId}" oncontextmenu="showBarCtx(event,${t.id},${isParent?'null':parentId},p.date)" ${dragAttr} ${clickAttr} onclick="${_onclickBar}">`;
               if(prog>0&&isWEStart) html+=`<div class="bprog" style="width:${prog}%"></div>`;
-              // label in every cell with offset so text appears fixed from start
-              const _weLblOff=-(daysDiff(_spStart,p.date)*CELL_DAY)+cellLeft;
-              html+=`<span class="blbl" style="left:${_weLblOff}px;width:${totalSpan*CELL_DAY}px">${shortName(t.name,18)}</span>`;
-              html+=`</div>${resizeL}${resizeR}${_tmhWe}</div>`;
+              const _weLbl = isWEStart ? `<span class="blbl" style="left:${cellLeft}px;width:${totalSpan*CELL_DAY}px;top:${tp}px;height:${ht}px;line-height:${ht}px">${shortName(t.name,Math.max(6,Math.floor(totalSpan*CELL_DAY/7)))}</span>` : '';
+              html+=`</div>${resizeL}${resizeR}${_tmhWe}${_weLbl}</div>`;
             }
           } else {
             // SEGMENTOWANY: każda komórka robocza rysuje swój kawałek paska
@@ -3775,15 +3773,13 @@ function render(){
                 const resizeR=(!hasSubs&&isTaskEnd)?` <div class="rh rh-r" style="top:${tp}px;height:${ht}px;left:${leftOff+w-7}px" onmousedown="startResize(event,${t.id},'${isParent?'null':parentId}','right','${_spId}')"></div>`:'';
                 html+=`<div class="bar-wrap"><div class="bar${isParent?'':' sub-bar'}" data-id="${t.id}" data-pid="${isParent?'null':parentId}" style="left:${leftOff}px;width:${w}px;background:${barColor};top:${tp}px;height:${ht}px;${borderStyle}" data-label="${isSegStart?shortName(t.name,18):''}" data-seglen="${isSegStart?seg.len:0}" data-spanid="${_spId}" ${dragAttr} ${clickAttr} onclick="${_onclickBar}">`;
                 if(prog>0&&isTaskStart) html+=`<div class="bprog" style="width:${(prog/100)*w}px"></div>`;
-                // render label in every seg cell with offset so text stays left-aligned from seg start
-                const lblOffset=-(dayOff-seg.off)*CELL_DAY+leftOff;
-                html+=`<span class="blbl" style="left:${lblOffset}px;width:${seg.len*CELL_DAY}px">${shortName(t.name,18)}</span>`;
+                const _segLbl = isSegStart ? `<span class="blbl" style="left:${leftOff}px;width:${seg.len*CELL_DAY}px;top:${tp}px;height:${ht}px;line-height:${ht}px">${shortName(t.name,Math.max(6,Math.floor(seg.len*CELL_DAY/7)))}</span>` : '';
                 // milestone markers for this task in day view
                 let _tmh='';
                 if(t.endMilestone!==false&&isTaskEnd){_tmh+=`<div class="milestone-marker" style="left:${leftOff+w-10}px" onclick="event.stopPropagation();openEdit(${t.id},'${isParent?'null':parentId}')" title="Koniec: ${t.name}"></div>`;}
                 (t.milestones||[]).forEach(ms=>{if(ms.date===p.date){_tmh+=`<div class="milestone-marker" style="left:${leftOff+4}px" onclick="event.stopPropagation();editTaskMilestone(${t.id},'${isParent?'null':parentId}','${ms.id}')" title="${ms.name}"></div>`;}});
                 _cbMilestones.forEach(ms=>{if(ms.date===p.date){_tmh+=`<div class="milestone-marker" style="left:${leftOff+w-10}px;opacity:.85" title="◆ ${ms.name}"></div>`;}});
-                html+=`</div>${resizeL}${resizeR}${_tmh}</div>`;
+                html+=`</div>${resizeL}${resizeR}${_tmh}${_segLbl}</div>`;
               }
             }
           }
@@ -4069,12 +4065,11 @@ function render(){
               const borderStyle=[borderL,borderR].filter(Boolean).join(';');
               const resizeL=isBarStart?`<div class="rh rh-l" style="top:${cbTp}px;height:${cbHt}px;left:${leftOff}px" onmousedown="startResizeCbBar(event,${t.id},${ci},'left')"></div>`:'';
               const resizeR=isBarEnd?`<div class="rh rh-r" style="top:${cbTp}px;height:${cbHt}px;left:${leftOff+w-7}px" onmousedown="startResizeCbBar(event,${t.id},${ci},'right')"></div>`:'';
-              const lblOffset=-(dayOff-seg.off)*CELL_DAY+leftOff;
-              const cbLabel=(c.text&&c.text.length>18)?c.text.slice(0,16)+'…':(c.text||'');
+              const cbLabel=(c.text||'');
               const cbMsMarker=(c.endMilestone&&isBarEnd)?`<div class="milestone-marker" style="left:${leftOff+w-10}px" onclick="event.stopPropagation();openEditCb(${t.id},${ci})" title="Koniec: ${c.text||''}"></div>`:'';
+              const _cbSegLbl=isSegStart?`<span class="blbl" style="left:${leftOff}px;width:${seg.len*CELL_DAY}px;top:${cbTp}px;height:${cbHt}px;line-height:${cbHt}px">${cbLabel}</span>`:'';
               html+=`<div class="bar-wrap"><div class="bar sub-bar" style="left:${leftOff}px;width:${w}px;background:${cbColor};top:${cbTp}px;height:${cbHt}px;${borderStyle}" onmousedown="startDragCbBar(event,${t.id},${ci})" oncontextmenu="showCbBarCtx(event,${t.id},${ci})" title="${c.start} – ${c.end}${c.notes?' | '+c.notes:''}" data-cbtid="${t.id}" data-cbci="${ci}">`;
-              html+=`<span class="blbl" style="left:${lblOffset}px;width:${seg.len*CELL_DAY}px">${cbLabel}</span>`;
-              html+=`</div>${resizeL}${resizeR}${cbMsMarker}</div>`;
+              html+=`</div>${resizeL}${resizeR}${cbMsMarker}${_cbSegLbl}</div>`;
             }
           }
           html+=`</td>`;
@@ -5556,7 +5551,8 @@ function _parseCbDate(text) {
   const now = new Date();
   let yr = now.getFullYear();
   const candidate = yr+'-'+mm+'-'+dd;
-  if (candidate < fmt(now) && parseInt(mm) < now.getMonth()+1) yr++;
+  const sixMonthsAgo = new Date(now); sixMonthsAgo.setMonth(sixMonthsAgo.getMonth()-6);
+  if (candidate < fmt(sixMonthsAgo)) yr++;
   return yr+'-'+mm+'-'+dd;
 }
 
@@ -6090,6 +6086,7 @@ async function __loadStateFromSupabase(){
   const pm_title=document.getElementById('project-title')?.value||'';
   const syncId=urlSyncId||pm_num||pm_title.replace(/\s+/g,'_');
   if(!syncId) return;
+  sessionStorage.setItem('sb_syncId', syncId);
   try{
     const _hdr={'apikey':__SB_KEY,'Authorization':'Bearer '+__sbToken()};
     const res=await fetch(__SB_URL+'/rest/v1/harmonogramy?sync_id=eq.'+encodeURIComponent(syncId)+'&limit=1',{
@@ -6176,6 +6173,7 @@ async function saveHTML(){
   const pm_num=document.getElementById('project-number').value||'';
   const urlSyncId=new URLSearchParams(window.location.search).get('syncId')||sessionStorage.getItem('sb_syncId')||'';
   const syncId=urlSyncId||pm_num||pm_title.replace(/\s+/g,'_');
+  if(syncId) sessionStorage.setItem('sb_syncId', syncId);
 
   // Zapisz DANE STANU jako JSON (nie cały HTML)
   const stateData = {
