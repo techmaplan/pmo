@@ -4668,7 +4668,7 @@ function render(){
       html+=`<button class="tcb-toggle-btn" onmousedown="event.stopPropagation()" onclick="event.stopPropagation();toggleCbRows(${t.id})" title="Zwiń/rozwiń checkboxy">${_cbExp?'☑':'☐'}<span class="tcb-toggle-count">${(t.taskChecklist||[]).length}</span></button>`;
     }
     // upd-tag removed - shown on mech section
-    const _updTs=t.updatedAt?new Date(t.updatedAt+'T00:00:00').getTime():0;const _dot=(_updTs&&_updTs>(window._lastSeenTs||0))?`<span class="upd-dot" title="Zaktualizowano ${_fmtUpdated(t.updatedAt)} (od ostatniej wizyty)"></span>`:'';
+    const _dot=(t.updatedAt&&window._lastSeenDate&&t.updatedAt>window._lastSeenDate)?`<span class="upd-dot" title="Zaktualizowano ${_fmtUpdated(t.updatedAt)} (od ostatniej wizyty)"></span>`:'';
     if(t.notes){html+=`${_dot}<span class="tn${isParent?'':' sub'} tt-wrap" data-tname="${(t.name||'').replace(/"/g,'&quot;')}" data-tnote="${(t.notes||'').replace(/"/g,'&quot;')}" ondblclick="inlineEditName(event,${t.id},'${isParent?'null':parentId}')">${t.name}</span>`;html+=`<span class="note-badge" title="Notatka">i</span>`;}else{html+=`${_dot}<span class="tn${isParent?'':' sub'}" title="${(t.name||'').replace(/"/g,'&quot;')}" ondblclick="inlineEditName(event,${t.id},'${isParent?'null':parentId}')">${t.name}</span>`;}
     const _hasRealBars=(t.spans&&t.spans.length>0)||(!t._empty&&(t.start&&t.end&&t.start!==t.end));
     if(t.manpowerEnabled!==false&&_hasRealBars){
@@ -7136,6 +7136,7 @@ async function __loadStateFromSupabase(){
     if(d._psExpanded!==undefined) _psExpanded=d._psExpanded;
     if(d.projectTitle){const t=document.getElementById('project-title');if(t&&!t.value)t.value=d.projectTitle;}
     if(d.projectNum){const n=document.getElementById('project-number');if(n&&!n.value)n.value=d.projectNum;}
+    try{const _lsk='harmo.lastSeenDate.'+syncId;window._lastSeenDate=localStorage.getItem(_lsk)||'';localStorage.setItem(_lsk,fmt(new Date()));}catch(e){window._lastSeenDate='';}
     render();
     // Ujawnij, potem przewiń do dziś po ustabilizowaniu layoutu
     {
@@ -7155,7 +7156,6 @@ async function __loadStateFromSupabase(){
         }
       },100);
     }
-    try{const _lsk='harmo.lastSeen.'+syncId;window._lastSeenTs=parseInt(localStorage.getItem(_lsk)||'0',10)||0;localStorage.setItem(_lsk,String(Date.now()));}catch(e){window._lastSeenTs=0;}
     console.log('Stan wczytany dla syncId:',syncId);
   }catch(e){console.warn('Blad wczytywania:',e);}
 }
