@@ -132,6 +132,7 @@ body{font-family:'Barlow',sans-serif;background:#f4f5f7;color:var(--black);heigh
 .ust-num-badge{display:inline-flex;align-items:center;justify-content:center;min-width:18px;height:18px;background:#2980b9;color:#fff;font-size:10px;font-weight:700;border-radius:50%;flex-shrink:0;line-height:1}
 .ust-sub-item{margin:1px 0 1px 25px;font-size:12px;color:#555;line-height:1.45}
 .tt-wrap{position:relative;cursor:default}
+.upd-dot{display:inline-block;width:7px;height:7px;border-radius:50%;flex-shrink:0;margin-right:5px;vertical-align:middle;background:#e8730c}
 .tt-box{display:none;position:fixed;z-index:9999;background:#1e293b;color:#f1f5f9;font-size:12px;font-family:'Barlow',sans-serif;padding:7px 11px;border-radius:5px;max-width:300px;white-space:normal;word-break:break-word;line-height:1.5;box-shadow:0 4px 14px rgba(0,0,0,.3);pointer-events:none;min-width:120px}
 .tt-name{display:block;font-weight:600;font-size:12px;color:#fff;margin-bottom:2px}
 .tt-note{margin-top:5px;padding-top:5px;border-top:1px solid rgba(255,255,255,.15);font-size:11px;color:#cbd5e1;white-space:pre-wrap}
@@ -4667,16 +4668,8 @@ function render(){
       html+=`<button class="tcb-toggle-btn" onmousedown="event.stopPropagation()" onclick="event.stopPropagation();toggleCbRows(${t.id})" title="Zwiń/rozwiń checkboxy">${_cbExp?'☑':'☐'}<span class="tcb-toggle-count">${(t.taskChecklist||[]).length}</span></button>`;
     }
     // upd-tag removed - shown on mech section
-    {
-      const _upd=t.updatedAt;
-      const _arch=t._updatedArchived;
-      const _udt=_upd?`Ostatnia aktualizacja: ${_fmtUpdated(_upd)}${_arch?' (zarchiwizowana)':''}`:'Brak informacji o aktualizacji';
-      const _ulbl=_upd?_fmtUpdated(_upd):'—';
-      const _cls=_arch?'fresh-archived':_updFreshClass(_upd);
-      html+=`<span class="upd-tag ${_cls}" title="${_udt}">${_ulbl}</span>`;
-    }
-    html+=`<span class="tn${isParent?'':' sub'} tt-wrap" data-tname="${(t.name||'').replace(/"/g,'&quot;')}" data-tnote="${(t.notes||'').replace(/"/g,'&quot;')}" ondblclick="inlineEditName(event,${t.id},'${isParent?'null':parentId}')">${t.name}</span>`;
-    if(t.notes) html+=`<span class="note-badge" title="Notatka">i</span>`;
+    const _updTs=t.updatedAt?new Date(t.updatedAt+'T00:00:00').getTime():0;const _dot=(_updTs&&_updTs>(window._lastSeenTs||0))?`<span class="upd-dot" title="Zaktualizowano ${_fmtUpdated(t.updatedAt)} (od ostatniej wizyty)"></span>`:'';
+    if(t.notes){html+=`${_dot}<span class="tn${isParent?'':' sub'} tt-wrap" data-tname="${(t.name||'').replace(/"/g,'&quot;')}" data-tnote="${(t.notes||'').replace(/"/g,'&quot;')}" ondblclick="inlineEditName(event,${t.id},'${isParent?'null':parentId}')">${t.name}</span>`;html+=`<span class="note-badge" title="Notatka">i</span>`;}else{html+=`${_dot}<span class="tn${isParent?'':' sub'}" title="${(t.name||'').replace(/"/g,'&quot;')}" ondblclick="inlineEditName(event,${t.id},'${isParent?'null':parentId}')">${t.name}</span>`;}
     const _hasRealBars=(t.spans&&t.spans.length>0)||(!t._empty&&(t.start&&t.end&&t.start!==t.end));
     if(t.manpowerEnabled!==false&&_hasRealBars){
       const _done=Math.round(_doneHours(t));
@@ -4999,7 +4992,7 @@ function render(){
     html+=`<tr class="mech-section-row" data-rid="${t.id}" data-rpid="null" data-rtype="mech" data-mech-id="${t.id}">`;
     html+=`<td class="lc mech-lc" data-mech-id="${t.id}">`;
     html+=`<div class="mech-section-label">`;
-    html+=`<span class="mech-icon">⚙</span>`;
+    // gear icon removed
     html+=`<div class="mech-title-wrap">`;
     html+=`<span class="mech-title${_sizeCls}" ondblclick="inlineMechEdit(event,${t.id})" title="${(t.name||'').replace(/"/g,'&quot;')} — kliknij dwukrotnie, aby edytować">${t.name}</span>`;
     if(_mechLatest[t.id]){const _mu=_mechLatest[t.id];html+=`<span class="mech-upd-tag" title="Ostatnia aktualizacja: ${_fmtUpdated(_mu)}">zaktualizowano ${_fmtUpdated(_mu)}</span>`;}
@@ -5044,6 +5037,7 @@ function render(){
       const _cbRowHidden=cbExpanded[t.id]===false;
       html+=`<tr class="task-cb-subrow${_cbRowHidden?' cb-row-hidden':''}" data-cbparent="${t.id}" data-cbidx="${ci}">`;
       html+=`<td class="lc"><div class="tlbl sub">`;
+      html+=`<span class="drag-handle" style="visibility:hidden">⠰</span>`;
       html+=`<button class="tcb-del-btn" onclick="taskCbRemove(${t.id},${ci})" title="Usuń checkbox">×</button>`;
       html+=`<input type="checkbox" ${c.checked?'checked':''} style="accent-color:#27ae60;cursor:pointer;width:13px;height:13px;flex-shrink:0;margin-top:2px" onchange="taskCbToggle(${t.id},${ci},this.checked)" onclick="event.stopPropagation()" onkeydown="if(event.key==='Enter')event.preventDefault()"/>`;
       html+=`<span class="tn sub" style="${doneStyle};cursor:text;white-space:normal;word-break:break-word;flex:1;min-width:0" id="tcbn-${t.id}-${ci}" onclick="taskCbStartEdit(${t.id},${ci},this)">${c.text||'<span style=color:var(--g4);font-style:italic>nazwa…</span>'}</span>`;
@@ -7134,6 +7128,7 @@ async function __loadStateFromSupabase(){
         }
       },100);
     }
+    try{const _lsk='harmo.lastSeen.'+syncId;window._lastSeenTs=parseInt(localStorage.getItem(_lsk)||'0',10)||0;localStorage.setItem(_lsk,String(Date.now()));}catch(e){window._lastSeenTs=0;}
     console.log('Stan wczytany dla syncId:',syncId);
   }catch(e){console.warn('Blad wczytywania:',e);}
 }
