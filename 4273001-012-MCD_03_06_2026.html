@@ -6548,12 +6548,14 @@ function getTask(id,parentId){
 // Parse DD.MM date from checkbox text (e.g. "BOM -03.06" -> "2026-06-03")
 function _parseCbDate(text) {
   if (!text) return null;
-  // match DD.MM at end or after dash/space
-  const m = text.match(/(\d{1,2})\.(\d{1,2})(?:\s*$|[^0-9])/);
+  // Data w formacie DD.MM — miesiąc MUSI być dwucyfrowy (06, 07, 12),
+  // co odróżnia daty od liczb technicznych typu "2.5t", "wersja 3.2", "1.5 kpl".
+  const m = text.match(/(?:^|[\s\-–—])(\d{1,2})\.(\d{2})(?=\s|$|[.,;)-])/);
   if (!m) return null;
-  const dd = String(m[1]).padStart(2,'0');
-  const mm = String(m[2]).padStart(2,'0');
-  // determine year: if month is in the past use next year
+  const d = parseInt(m[1],10), mo = parseInt(m[2],10);
+  if (d < 1 || d > 31 || mo < 1 || mo > 12) return null;
+  const dd = String(d).padStart(2,'0');
+  const mm = String(mo).padStart(2,'0');
   const now = new Date();
   let yr = now.getFullYear();
   const candidate = yr+'-'+mm+'-'+dd;
