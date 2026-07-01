@@ -131,6 +131,10 @@ body{font-family:'Barlow',sans-serif;background:#f4f5f7;color:var(--black);heigh
 .ust-num-item{display:flex;align-items:baseline;gap:7px;margin:6px 0 2px 0;font-size:13px;font-weight:600;color:#1a5c9a}
 .ust-num-badge{display:inline-flex;align-items:center;justify-content:center;min-width:18px;height:18px;background:#2980b9;color:#fff;font-size:10px;font-weight:700;border-radius:50%;flex-shrink:0;line-height:1}
 .ust-sub-item{margin:1px 0 1px 25px;font-size:12px;color:#555;line-height:1.45}
+.tt-wrap{position:relative;cursor:default}
+.tt-box{display:none;position:fixed;z-index:9999;background:#1e293b;color:#f1f5f9;font-size:12px;font-family:'Barlow',sans-serif;padding:7px 11px;border-radius:5px;max-width:300px;white-space:normal;word-break:break-word;line-height:1.5;box-shadow:0 4px 14px rgba(0,0,0,.3);pointer-events:none;min-width:120px}
+.tt-name{display:block;font-weight:600;font-size:12px;color:#fff;margin-bottom:2px}
+.tt-note{margin-top:5px;padding-top:5px;border-top:1px solid rgba(255,255,255,.15);font-size:11px;color:#cbd5e1;white-space:pre-wrap}
 .ust-task-header:hover{background:#ddeef8}
 .ust-collapse-arrow{font-size:9px;flex-shrink:0;transition:transform .15s;color:#2980b9}
 .ust-header-count{font-size:9px;font-weight:700;background:#2980b9;color:#fff;padding:1px 5px;border-radius:8px;flex-shrink:0}
@@ -382,9 +386,10 @@ tbody tr:hover td.dc.we-col{background:#e7e3db}
 .bprog{position:absolute;top:0;left:0;height:100%;opacity:.35;background:#fff}
 .blbl{display:block;position:absolute;top:50%;transform:translateY(-50%);left:0;width:100%;text-align:center;font-size:10px;font-weight:700;color:#fff;white-space:nowrap;text-transform:uppercase;letter-spacing:.03em;text-shadow:0 1px 4px rgba(0,0,0,.8);pointer-events:none;padding:0 3px;box-sizing:border-box}
 .xbtn{cursor:pointer;font-size:10px;color:var(--g4);padding:2px;background:none;border:none;flex-shrink:0;width:14px}
-.ra{display:flex;gap:2px;opacity:0;transition:opacity .15s;flex-shrink:0;position:absolute;right:2px;bottom:calc(100% + 1px);top:auto;transform:none;background:rgba(255,255,255,.97);padding:3px 4px;border:1px solid var(--g3);box-shadow:0 2px 6px rgba(0,0,0,.18);z-index:35;pointer-events:none;border-radius:3px}
+.ra{display:flex;gap:2px;opacity:0;transition:opacity .15s;flex-shrink:0;position:absolute;right:2px;top:50%;bottom:auto;transform:translateY(-50%);background:rgba(255,255,255,.97);padding:3px 4px;border:1px solid var(--g3);box-shadow:0 2px 6px rgba(0,0,0,.18);z-index:35;pointer-events:none;border-radius:3px}
 .ra.ra-above{top:auto;bottom:calc(100% + 2px);transform:none;right:auto;left:0}
 tbody tr:hover .ra{opacity:1;pointer-events:auto}
+tbody tr:hover:has(.tt-wrap:hover) .ra{opacity:0;pointer-events:none}
 @keyframes lup-pulse{0%,100%{opacity:1}50%{opacity:.35}}
 #lup-chip-dot{animation:lup-pulse 2.5s infinite}
 .ra-sep{width:0.5px;height:14px;background:var(--color-border-tertiary,#ddd);flex-shrink:0;align-self:center}
@@ -423,9 +428,10 @@ tbody tr.plan-row:hover td.lc{background:#f0ede7}
 .tlbl.plan{padding-left:28px}
 .tn.plan{font-size:11px;font-weight:400;color:var(--g4);font-style:italic;letter-spacing:.02em}
 .pi-badge{font-size:10px;color:#7a6a50;background:#ede8df;border:1px solid #d4cfc5;padding:1px 5px;border-radius:2px;flex-shrink:0;font-style:normal;letter-spacing:.01em}
-.note-badge{display:inline-flex;align-items:center;justify-content:center;width:14px;height:14px;border-radius:50%;background:#2980b9;color:#fff;font-size:9px;font-weight:700;flex-shrink:0;cursor:default;line-height:1;margin-left:2px;font-style:italic;font-family:Georgia,serif}
+.note-badge{display:inline-flex;align-items:center;justify-content:center;width:14px;height:14px;border-radius:50%;background:#2980b9;color:#fff;font-size:9px;font-weight:700;flex-shrink:0;cursor:default;line-height:1;margin-left:2px;font-style:italic;font-family:Georgia,serif;opacity:.7}
 
 .upd-tag{display:inline-flex;align-items:center;flex-shrink:0;font-size:9px;font-weight:700;line-height:1;padding:2px 5px;border-radius:2px;font-family:'Barlow',sans-serif;letter-spacing:.02em;cursor:help;margin-right:4px}
+.mech-upd-tag{display:block;font-size:9px;font-family:'Barlow',sans-serif;color:rgba(255,255,255,.45);margin-top:1px;letter-spacing:.02em;white-space:nowrap}
 .upd-tag.fresh-today{background:#2c5aa0;color:#fff}
 .upd-tag.fresh-week{background:#e0f0e8;color:#1e7a48;border:1px solid #b8d8c6}
 .upd-tag.fresh-month{background:#f0eee9;color:#7a6a55;border:1px solid #d8d0c8}
@@ -4660,8 +4666,7 @@ function render(){
       const _cbExp=cbExpanded[t.id]!==false;
       html+=`<button class="tcb-toggle-btn" onmousedown="event.stopPropagation()" onclick="event.stopPropagation();toggleCbRows(${t.id})" title="Zwiń/rozwiń checkboxy">${_cbExp?'☑':'☐'}<span class="tcb-toggle-count">${(t.taskChecklist||[]).length}</span></button>`;
     }
-    // Adnotacja daty ostatniej aktualizacji - widoczna zawsze obok nazwy.
-    // Po wyczyszczeniu listy (_updatedArchived) tag wciąż widoczny, ale w wyblakłym stylu.
+    // upd-tag removed - shown on mech section
     {
       const _upd=t.updatedAt;
       const _arch=t._updatedArchived;
@@ -4670,8 +4675,8 @@ function render(){
       const _cls=_arch?'fresh-archived':_updFreshClass(_upd);
       html+=`<span class="upd-tag ${_cls}" title="${_udt}">${_ulbl}</span>`;
     }
-    html+=`<span class="tn${isParent?'':' sub'}" title="${t.name}" ondblclick="inlineEditName(event,${t.id},'${isParent?'null':parentId}')">${t.name}</span>`;
-    if(t.notes) html+=`<span class="note-badge" title="${t.notes.replace(/"/g,'&quot;')}">i</span>`;
+    html+=`<span class="tn${isParent?'':' sub'} tt-wrap" data-tname="${(t.name||'').replace(/"/g,'&quot;')}" data-tnote="${(t.notes||'').replace(/"/g,'&quot;')}" ondblclick="inlineEditName(event,${t.id},'${isParent?'null':parentId}')">${t.name}</span>`;
+    if(t.notes) html+=`<span class="note-badge" title="Notatka">i</span>`;
     const _hasRealBars=(t.spans&&t.spans.length>0)||(!t._empty&&(t.start&&t.end&&t.start!==t.end));
     if(t.manpowerEnabled!==false&&_hasRealBars){
       const _done=Math.round(_doneHours(t));
@@ -4848,11 +4853,9 @@ function render(){
           const ht=isParent?20:14;const tp=isParent?4:7;
           const isFirstWeek=effStart>=p.start&&effStart<=p.end;
           const dragAttr=hasSubs?'':'onmousedown="startDrag(event,'+t.id+','+(isParent?'null':parentId)+')"';
-          const _spId2=typeof _spId!=='undefined'?_spId:'main';
-          const _onclickBar2w=hasSubs?'':'openEdit('+t.id+','+(isParent?'null':parentId)+')';
-          const resizeL2=hasSubs?'':` <div class="rh rh-l" style="top:${tp}px;height:${ht}px;left:${left+1}px" onmousedown="startResize(event,${t.id},'${isParent?'null':parentId}','left','${_spId2}')"></div>`;
-          const resizeR2=hasSubs?'':` <div class="rh rh-r" style="top:${tp}px;height:${ht}px;left:${left+1+w-7}px" onmousedown="startResize(event,${t.id},'${isParent?'null':parentId}','right','${_spId2}')"></div>`;
-          html+=`<div class="bar-wrap"><div class="bar${isParent?'':' sub-bar'}" data-id="${t.id}" data-pid="${isParent?'null':parentId}" style="left:${left+1}px;width:${w}px;background:${barColor};top:${tp}px;height:${ht}px" ${dragAttr} oncontextmenu="showBarCtx(event,${t.id},${isParent?'null':parentId},p.date)" onclick="${_onclickBar2w}">`;
+          const resizeL2=hasSubs?'':` <div class="rh rh-l" style="top:${tp}px;height:${ht}px;left:${left+1}px" onmousedown="startResize(event,${t.id},'${isParent?'null':parentId}','left','${_spId}')"></div>`;
+          const resizeR2=hasSubs?'':` <div class="rh rh-r" style="top:${tp}px;height:${ht}px;left:${left+1+w-7}px" onmousedown="startResize(event,${t.id},'${isParent?'null':parentId}','right','${_spId}')"></div>`;
+          html+=`<div class="bar-wrap"><div class="bar${isParent?'':' sub-bar'}" data-id="${t.id}" data-pid="${isParent?'null':parentId}" style="left:${left+1}px;width:${w}px;background:${barColor};top:${tp}px;height:${ht}px" ${dragAttr} oncontextmenu="showBarCtx(event,${t.id},${isParent?'null':parentId},p.date)" onclick="${_onclickBar2}">`;
           if(prog>0) html+=`<div class="bprog" style="width:${prog}%"></div>`;
           if(isFirstWeek&&spanDays>=3) html+=`<span class="blbl">${t.name.length>10?t.name.slice(0,8)+'…':t.name}</span>`;
           let _tmh2='';
@@ -5003,6 +5006,7 @@ function render(){
     html+=`<span class="mech-icon">⚙</span>`;
     html+=`<div class="mech-title-wrap">`;
     html+=`<span class="mech-title${_sizeCls}" ondblclick="inlineMechEdit(event,${t.id})" title="${(t.name||'').replace(/"/g,'&quot;')} — kliknij dwukrotnie, aby edytować">${t.name}</span>`;
+    if(_mechLatest[t.id]){const _mu=_mechLatest[t.id];html+=`<span class="mech-upd-tag" title="Ostatnia aktualizacja: ${_fmtUpdated(_mu)}">zaktualizowano ${_fmtUpdated(_mu)}</span>`;}
     html+=`</div>`;
     html+=`<button class="mech-move-btn" onclick="moveMechSection(${t.id},-1)" title="Przesuń w górę">▲</button>`;
     html+=`<button class="mech-move-btn" onclick="moveMechSection(${t.id},1)" title="Przesuń w dół">▼</button>`;
@@ -5012,6 +5016,17 @@ function render(){
     html+=`<td class="mech-rest" colspan="${restColCount}"></td>`;
     html+=`</tr>`;
   };
+
+  // Build map: mechId -> latest updatedAt among its tasks
+  const _mechLatest={};
+  {let _cmid=null;
+  tasks.forEach(t=>{
+    if(t._isMechSection){_cmid=t.id;return;}
+    if(_cmid===null)return;
+    [t,...(t.sub||[])].forEach(x=>{
+      if(x.updatedAt&&(!_mechLatest[_cmid]||x.updatedAt>_mechLatest[_cmid]))_mechLatest[_cmid]=x.updatedAt;
+    });
+  });}
 
   tasks.forEach(t=>{
     if(t._isMechSection){
@@ -7073,6 +7088,7 @@ async function __loadStateFromSupabase(){
     if(d.cols)             cols=d.cols;
     cols.hours=false; cols.mp=false; // zawsze ukryte przy starcie
     if(d.view)             view=d.view;
+    if(typeof syncButtonStates==='function') syncButtonStates();
     if(d.viewStart)        viewStart=new Date(d.viewStart);
     if(d.cbExpanded)       cbExpanded=d.cbExpanded;
     if(d.expanded)         expanded=d.expanded;
@@ -7230,6 +7246,7 @@ function loadProject(e){
       expanded=data.expanded||{};
       nextId=data.nextId||200;
       if(data.view)setView(data.view);
+      if(typeof syncButtonStates==='function') syncButtonStates();
       if(data.cols){cols=data.cols;
         const m={hours:'toh',days:'tod',weeks:'tow',mp:'tom'};
         Object.keys(m).forEach(k=>document.getElementById(m[k]).classList.toggle('on',cols[k]));
@@ -7702,19 +7719,47 @@ function tcbPopDel(){
 }
 
 // Synchronizacja stanu przycisków widoku i kolumn z załadowanymi danymi
-(function initButtonStates(){
+function syncButtonStates(){
   document.getElementById('vd')?.classList.toggle('on', view==='days');
   document.getElementById('vw')?.classList.toggle('on', view==='weeks');
   document.getElementById('vwn')?.classList.toggle('on', view==='weeks-nd');
   const m={hours:'toh',days:'tod',weeks:'tow',mp:'tom'};
-  Object.keys(m).forEach(k=>document.getElementById(m[k]).classList.toggle('on',cols[k]));
-})();
+  Object.keys(m).forEach(k=>{ const el=document.getElementById(m[k]); if(el) el.classList.toggle('on',!!cols[k]); });
+}
+syncButtonStates();
 
 // Fallback: jeśli Supabase nie odpowie w 5s, ujawnij mimo wszystko
 setTimeout(function(){ const w=document.getElementById('gantt-wrap'); if(w&&w.style.visibility==='hidden'){w.style.visibility='';const _ld=document.getElementById('gantt-loading');if(_ld)_ld.style.display='none';} }, 5000);
 render();
 // Przewiń do dziś (bez odsłaniania — wrap odsłania dopiero __loadStateFromSupabase)
 // scroll do dziś wykonywany po załadowaniu danych z Supabase
+
+// Task name tooltip
+(function(){
+  const box=document.createElement('div');
+  box.className='tt-box';
+  box.style.display='none';
+  document.body.appendChild(box);
+  function esc(s){return s.replace(/&amp;/g,'&').replace(/&quot;/g,'"').replace(/&lt;/g,'<').replace(/&gt;/g,'>');}
+  document.addEventListener('mouseover',function(e){
+    const wrap=e.target.closest('.tt-wrap');
+    if(!wrap)return;
+    const name=wrap.dataset.tname?esc(wrap.dataset.tname):(wrap.textContent.trim());
+    const note=wrap.dataset.tnote?esc(wrap.dataset.tnote):'';
+    box.innerHTML='<span class="tt-name">'+name+'</span>'+(note?'<div class="tt-note">'+note.split('\n').join('<br>')+'</div>':'');
+    box.style.display='block';
+    const r=wrap.getBoundingClientRect();
+    const bh=box.offsetHeight,bw=box.offsetWidth;
+    let top=r.bottom+6; if(top+bh>window.innerHeight-8) top=r.top-bh-6;
+    let left=r.left; if(left+bw>window.innerWidth-8) left=window.innerWidth-bw-8;
+    box.style.top=top+'px'; box.style.left=left+'px';
+  });
+  document.addEventListener('mouseout',function(e){
+    const wrap=e.target.closest('.tt-wrap');
+    if(wrap&&!wrap.contains(e.relatedTarget)) box.style.display='none';
+  });
+  document.addEventListener('scroll',function(){box.style.display='none';},{passive:true,capture:true});
+})();
 
 // Keep .ra-above visible when cursor moves from tr onto the floating panel
 (function(){
