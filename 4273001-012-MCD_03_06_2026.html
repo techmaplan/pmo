@@ -6873,8 +6873,24 @@ function __sbToken(){
   // Fallback: sessionStorage
   return sessionStorage.getItem('sb_token') || __SB_KEY;
 }
+async function __sbRefreshToken() {
+  const refreshToken = sessionStorage.getItem('sb_refresh_token');
+  if (!refreshToken) return false;
+  try {
+    const res = await fetch(`${__SB_URL}/auth/v1/token?grant_type=refresh_token`, {
+      method: 'POST',
+      headers: { 'apikey': __SB_KEY, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ refresh_token: refreshToken }),
+    });
+    if (!res.ok) { sessionStorage.removeItem('sb_token'); sessionStorage.removeItem('sb_refresh_token'); return false; }
+    const data = await res.json();
+    sessionStorage.setItem('sb_token', data.access_token);
+    if (data.refresh_token) sessionStorage.setItem('sb_refresh_token', data.refresh_token);
+    return true;
+  } catch(e) { return false; }
+}
 async function __sbUpsert(table, row) {
-  const res = await fetch(`${__SB_URL}/rest/v1/${table}`, {
+  const doRequest = () => fetch(`${__SB_URL}/rest/v1/${table}`, {
     method: 'POST',
     headers: {
       'apikey': __SB_KEY, 'Authorization': `Bearer ${__sbToken()}`,
@@ -6882,9 +6898,14 @@ async function __sbUpsert(table, row) {
     },
     body: JSON.stringify(row),
   });
+  let res = await doRequest();
+  if (res.status === 401) {
+    const refreshed = await __sbRefreshToken();
+    if (refreshed) res = await doRequest();
+    else { sessionStorage.removeItem('sb_token'); sessionStorage.removeItem('sb_refresh_token'); }
+  }
   if (!res.ok) {
     const err = await res.text();
-    if (res.status === 401) { sessionStorage.removeItem('sb_token'); sessionStorage.removeItem('sb_refresh_token'); }
     throw new Error(`Supabase ${table} error ${res.status}: ${err}`);
   }
   return res;
@@ -6953,12 +6974,18 @@ function scheduleAutosave() {
       _showAutosaveStatus('✓ Zapisano', 'ok');
     } catch(e) {
       console.error('Błąd zapisu:', e);
-      // Retry raz po 4s przy błędzie sieciowym
-      if(e.message && e.message.includes('fetch')) {
+      const _m=(e.message||'').toLowerCase();
+      const _transient = _m.includes('fetch')||_m.includes('network')||_m.includes('failed to')||_m.includes('timeout')||/ 5\d\d/.test(_m)||_m.includes('429');
+      if(_transient) {
         _showAutosaveStatus('Ponawiam…', 'pending');
         setTimeout(async () => {
           try { await saveHTML(); _showAutosaveStatus('✓ Zapisano', 'ok'); }
-          catch(e2) { _showAutosaveStatus('Błąd zapisu: ' + e2.message, 'err'); }
+          catch(e2) {
+            setTimeout(async () => {
+              try { await saveHTML(); _showAutosaveStatus('✓ Zapisano', 'ok'); }
+              catch(e3) { _showAutosaveStatus('Błąd zapisu: ' + e3.message, 'err'); }
+            }, 8000);
+          }
         }, 4000);
       } else {
         _showAutosaveStatus('Błąd zapisu: ' + e.message, 'err');
