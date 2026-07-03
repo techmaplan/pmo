@@ -5986,6 +5986,8 @@ function scheduleAutosave() {
             }, 8000);
           }
         }, 4000);
+      } else if(_m.includes('sesj')||_m.includes('401')||_m.includes('jwt')||_m.includes('token')) {
+        _showAutosaveStatus('Sesja wygasła — otwórz projekt ponownie przez link z panelu', 'err');
       } else {
         _showAutosaveStatus('Błąd zapisu: ' + e.message, 'err');
       }
@@ -6130,7 +6132,7 @@ async function __loadStateFromSupabase(){
           changed=true;
         }
       });
-      if(changed) scheduleAutosave();
+      if(changed) setTimeout(()=>{ if(window._autosaveReady) scheduleAutosave(); }, 1500);
     }
     if(d._psExpanded!==undefined) _psExpanded=d._psExpanded;
     if(d.projectTitle){const t=document.getElementById('project-title');if(t&&!t.value)t.value=d.projectTitle;}
@@ -6202,13 +6204,7 @@ async function saveHTML(){
     end:maxDate?maxDate.toISOString().slice(0,10):null,
   };
 
-  try{
-    await __sbUpsert('harmonogramy',{sync_id:syncId, html: JSON.stringify(stateData)});
-  }catch(e){
-    console.error('Błąd zapisu:',e);
-    _showAutosaveStatus('Błąd zapisu: '+e.message,'err');
-    return;
-  }
+  await __sbUpsert('harmonogramy',{sync_id:syncId, html: JSON.stringify(stateData)});
 
   // Aktualizuj metadane projektu
   try{
